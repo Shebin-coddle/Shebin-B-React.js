@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
-import ProtectedRoute from "../routes/protectedRoute";
+import ProtectedRoute from "../routes/ProtectedRoute";
 
 beforeEach(() => {
   localStorage.clear();
