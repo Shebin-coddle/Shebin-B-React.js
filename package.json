@@ -8,9 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest",
+    "test:ui": "vitest --ui",
     "coverage": "vitest run --coverage",
-    "sonar": "sonar-scanner",
-    "preview": "vite preview"
+    "sonar": "sonar-scanner"
   },
   "dependencies": {
     "react": "^19.2.6",
@@ -37,6 +37,6 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.3",
     "vite": "^8.0.12",
-    "vitest": "^4.1.6"
+    "vitest": "^4.1.7"
   }
 }

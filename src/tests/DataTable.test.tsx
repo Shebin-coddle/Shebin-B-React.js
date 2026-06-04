@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import AdminTable from "../components/table/AdminTable";
+import DataTable from "../components/table/DataTable";
 
 type User = {
   id: number;
@@ -23,7 +23,7 @@ test("renders table headers and rows", () => {
     },
   ];
 
-  render(<AdminTable columns={columns} data={data} />);
+  render(<DataTable columns={columns} data={data} />);
 
   expect(screen.getByText("ID")).toBeInTheDocument();
   expect(screen.getByText("Name")).toBeInTheDocument();

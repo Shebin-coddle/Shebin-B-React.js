@@ -1,139 +1,80 @@
-import {
-  useEffect,
-  useState,
-  type ChangeEvent,
-  type SyntheticEvent,
-} from "react";
-
-import AdminTable from "../../components/table/AdminTable";
-
+import { useEffect, useState } from "react";
+import DataTable from "../../components/table/DataTable";
+import { useNavigate } from "react-router-dom";
 import {
   getAllAppointments,
-  updateAppointment,
+  removeAppointment,
 } from "../../services/AppointmentService";
-
-import type {
-  Appointment,
-  UpdateAppointmentRequest,
-} from "../../types/AppointmentTypes";
-import DetailCard from "../../components/DetailsView";
-import EditForm from "../../components/EditForm";
+import type { Appointment } from "../../types/AppointmentTypes";
+import { getAllUsers } from "../../services/UserService";
+import DeleteModal from "../../components/DeleteModal";
 
 function AdminAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-
-  const [selectedAppointment, setSelectedAppointment] =
-    useState<Appointment | null>(null);
-
-  const [editingAppointment, setEditingAppointment] =
-    useState<Appointment | null>(null);
-
-  const [editForm, setEditForm] = useState<UpdateAppointmentRequest>({
-    appointment_date: "",
-    start_time: "",
-    end_time: "",
-    status: "",
-  });
-
+  useState<Appointment | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-
   const [error, setError] = useState<string>("");
+  const [userName, setUserName] = useState<Record<number, string>>({});
+  const navigate = useNavigate();
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     async function fetchAppointments() {
       try {
         const appointmentData = await getAllAppointments();
-
         setAppointments(appointmentData);
       } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Error occurred while fetching appointments");
-        }
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Error occurred while fetching appointments",
+        );
       } finally {
         setLoading(false);
       }
     }
-
     fetchAppointments();
   }, []);
 
-  function handleView(id: number) {
-    const appointment = appointments.find(
-      (appointment) => appointment.id === id,
-    );
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const users = await getAllUsers();
 
-    if (appointment) {
-      setSelectedAppointment(appointment);
+        const map = Object.fromEntries(
+          users.map((u) => [u.id, `Dr.${u.first_name} ${u.last_name}`]),
+        );
+        setUserName(map);
+      } catch (err) {
+        console.error("Failed to load users", err);
+      }
     }
+    fetchUsers();
+  }, []);
+
+  function openDeleteModal(id: number) {
+    setDeleteId(id);
   }
 
-  function handleEdit(id: number) {
-    const appointment = appointments.find(
-      (appointment) => appointment.id === id,
-    );
-
-    if (appointment) {
-      setEditingAppointment(appointment);
-
-      setEditForm({
-        appointment_date: appointment.appointment_date.split("T")[0],
-
-        start_time: appointment.start_time,
-
-        end_time: appointment.end_time,
-
-        status: appointment.status,
-      });
-    }
-  }
-
-  function handleEditChange(
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) {
-    const { name, value } = e.target;
-
-    setEditForm((prevForm) => ({
-      ...prevForm,
-      [name]: value,
-    }));
-  }
-
-  async function handleUpdateAppointment(e: SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    if (!editingAppointment) {
-      return;
-    }
+  async function confirmDelete() {
+    if (!deleteId) return;
 
     try {
-      await updateAppointment(editingAppointment.id, editForm);
+      setDeleting(true);
+      setError("");
 
-      setAppointments((prevAppointments) =>
-        prevAppointments.map((appointment) =>
-          appointment.id === editingAppointment.id
-            ? {
-                ...appointment,
-                appointment_date: editForm.appointment_date,
+      await removeAppointment(deleteId);
 
-                start_time: editForm.start_time,
-
-                end_time: editForm.end_time,
-
-                status: editForm.status,
-              }
-            : appointment,
-        ),
+      setAppointments((prev) =>
+        prev.filter((appointment) => appointment.id !== deleteId),
       );
 
-      setEditingAppointment(null);
+      setDeleteId(null);
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Error occurred while updating appointment");
-      }
+      setError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -144,18 +85,18 @@ function AdminAppointments() {
     },
 
     {
-      header: "Doctor ID",
-      render: (appointment: Appointment) => appointment.doctor_id,
+      header: "Doctor",
+      render: (a: Appointment) => userName[a.doctor_id] || a.doctor_id,
     },
-
     {
-      header: "Patient ID",
-      render: (appointment: Appointment) => appointment.patient_id,
+      header: "Patient",
+      render: (a: Appointment) => userName[a.patient_id] || a.patient_id,
     },
 
     {
       header: "Date",
-      render: (appointment: Appointment) => appointment.appointment_date,
+      render: (appointment: Appointment) =>
+        new Date(appointment.appointment_date).toLocaleDateString("en-IN"),
     },
 
     {
@@ -177,9 +118,17 @@ function AdminAppointments() {
       header: "Actions",
       render: (appointment: Appointment) => (
         <div className="table-actions">
-          <button onClick={() => handleView(appointment.id)}>View</button>
-
-          <button onClick={() => handleEdit(appointment.id)}>Edit</button>
+          <button
+            className="edit-btn"
+            onClick={() =>
+              navigate(`/admin-appointments/edit/${appointment.id}`)
+            }
+          >
+            Edit
+          </button>
+          <button onClick={() => openDeleteModal(appointment.id)}>
+            Delete
+          </button>
         </div>
       ),
     },
@@ -196,82 +145,18 @@ function AdminAppointments() {
   return (
     <section>
       <h2>Appointments</h2>
-
-      <AdminTable columns={columns} data={appointments} />
-
-      {selectedAppointment && (
-        <DetailCard
-          title="Selected Appointment Details"
-          details={[
-            {
-              label: "ID",
-              value: selectedAppointment.id,
-            },
-            {
-              label: "Doctor ID",
-              value: selectedAppointment.doctor_id,
-            },
-            {
-              label: "Patient ID",
-              value: selectedAppointment.patient_id,
-            },
-            {
-              label: "Status",
-              value: selectedAppointment.status,
-            },
-          ]}
-          onClose={() => setSelectedAppointment(null)}
-        />
-      )}
-
-      {editingAppointment && (
-        <EditForm
-          title="Edit Appointment"
-          fields={[
-            {
-              name: "appointment_date",
-              label: "Appointment Date",
-              type: "date",
-              value: editForm.appointment_date,
-            },
-            {
-              name: "start_time",
-              label: "Start Time",
-              type: "time",
-              value: editForm.start_time,
-            },
-            {
-              name: "end_time",
-              label: "End Time",
-              type: "time",
-              value: editForm.end_time,
-            },
-            {
-              name: "status",
-              label: "Status",
-              type: "select",
-              value: editForm.status,
-              options: [
-                {
-                  label: "Scheduled",
-                  value: "scheduled",
-                },
-                {
-                  label: "Completed",
-                  value: "completed",
-                },
-                {
-                  label: "Cancelled",
-                  value: "cancelled",
-                },
-              ],
-            },
-          ]}
-          onChange={handleEditChange}
-          onSubmit={handleUpdateAppointment}
-          onCancel={() => setEditingAppointment(null)}
-        />
-      )}
+      <button onClick={() => navigate("/admin-appointments/add")}>
+        Add appointment
+      </button>
+      <DataTable columns={columns} data={appointments} />
+      <DeleteModal
+        open={deleteId !== null}
+        title="Delete Appointment"
+        message="Do you want to continue?"
+        loading={deleting}
+        onCancel={() => setDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
     </section>
   );
 }

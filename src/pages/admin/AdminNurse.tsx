@@ -1,25 +1,19 @@
-import {
-  useEffect,
-  useState,
-  type ChangeEvent,
-  type SyntheticEvent,
-} from "react";
-import AdminTable from "../../components/table/AdminTable";
-import { getAllNurses, updateNurse } from "../../services/NurseService";
-import type { Nurse, UpdateNurseRequest } from "../../types/NurseTypes";
-import DetailCard from "../../components/DetailsView";
-import EditForm from "../../components/EditForm";
+import { useEffect, useState } from "react";
+import DataTable from "../../components/table/DataTable";
+import { getAllNurses, removeNurse } from "../../services/NurseService";
+import type { Nurse } from "../../types/NurseTypes";
+import { useNavigate } from "react-router-dom";
+import { getAllUsers } from "../../services/UserService";
+import DeleteModal from "../../components/DeleteModal";
 
 function AdminNurses() {
   const [nurses, setNurses] = useState<Nurse[]>([]);
-  const [selectedNurse, setSelectedNurse] = useState<Nurse | null>(null);
-  const [editingNurse, setEditingNurse] = useState<Nurse | null>(null);
-  const [editForm, setEditForm] = useState<UpdateNurseRequest>({
-    salary: 0,
-    department_id: 0,
-  });
+  const [userName, setUserName] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const navigate = useNavigate();
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     async function fetchNurses() {
@@ -40,67 +34,44 @@ function AdminNurses() {
     fetchNurses();
   }, []);
 
-  function handleView(userId: number) {
-    const nurse = nurses.find((nurse) => nurse.user_id === userId);
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const users = await getAllUsers();
 
-    if (nurse) {
-      setSelectedNurse(nurse);
+        const map = Object.fromEntries(
+          users.map((u) => [u.id, `${u.first_name} ${u.last_name}`]),
+        );
+
+        setUserName(map);
+      } catch (err) {
+        console.error("Failed to load users", err);
+      }
     }
+
+    fetchUsers();
+  }, []);
+
+  function openDeleteModal(id: number) {
+    setDeleteId(id);
   }
 
-  function handleEdit(userId: number) {
-    const nurse = nurses.find((nurse) => nurse.user_id === userId);
-
-    if (nurse) {
-      setEditingNurse(nurse);
-
-      setEditForm({
-        salary: nurse.salary,
-        department_id: nurse.department_id,
-      });
-    }
-  }
-
-  function handleEditChange(
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) {
-    const { name, value } = e.target;
-
-    setEditForm((prevForm) => ({
-      ...prevForm,
-      [name]: Number(value),
-    }));
-  }
-
-  async function handleUpdateNurse(e: SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    if (!editingNurse) {
-      return;
-    }
+  async function confirmDelete() {
+    if (!deleteId) return;
 
     try {
-      await updateNurse(editingNurse.user_id, editForm);
+      setDeleting(true);
+      setError("");
 
-      setNurses((prevNurses) =>
-        prevNurses.map((nurse) =>
-          nurse.user_id === editingNurse.user_id
-            ? {
-                ...nurse,
-                salary: editForm.salary,
-                department_id: editForm.department_id,
-              }
-            : nurse,
-        ),
-      );
+      await removeNurse(deleteId);
 
-      setEditingNurse(null);
+      setNurses((prev) => prev.filter((nurse) => nurse.user_id !== deleteId));
+
+      setDeleteId(null);
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Error occurred while updating nurse");
-      }
+      setError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -109,6 +80,12 @@ function AdminNurses() {
       header: "User ID",
       render: (nurse: Nurse) => nurse.user_id,
     },
+
+    {
+      header: "Name",
+      render: (nurse: Nurse) => userName[nurse.user_id] || nurse.user_id,
+    },
+
     {
       header: "Salary",
       render: (nurse: Nurse) => nurse.salary,
@@ -121,8 +98,12 @@ function AdminNurses() {
       header: "Actions",
       render: (nurse: Nurse) => (
         <div className="table-actions">
-          <button onClick={() => handleView(nurse.user_id)}>View</button>
-          <button onClick={() => handleEdit(nurse.user_id)}>Edit</button>
+          <button
+            onClick={() => navigate(`/admin-nurses/edit/${nurse.user_id}`)}
+          >
+            Edit
+          </button>
+          <button onClick={() => openDeleteModal(nurse.user_id)}>Delete</button>
         </div>
       ),
     },
@@ -140,42 +121,15 @@ function AdminNurses() {
     <section>
       <h2>Nurses</h2>
 
-      <AdminTable columns={columns} data={nurses} />
-
-      {selectedNurse && (
-        <DetailCard
-          title="Selected Nurse Details"
-          details={[
-            { label: "User ID", value: selectedNurse.user_id },
-            { label: "Salary", value: selectedNurse.salary },
-            { label: "Department ID", value: selectedNurse.department_id },
-          ]}
-          onClose={() => setSelectedNurse(null)}
-        />
-      )}
-
-      {editingNurse && (
-        <EditForm
-          title="Edit Nurse"
-          fields={[
-            {
-              name: "salary",
-              label: "Salary",
-              type: "number",
-              value: editForm.salary,
-            },
-            {
-              name: "department_id",
-              label: "Department ID",
-              type: "number",
-              value: editForm.department_id,
-            },
-          ]}
-          onChange={handleEditChange}
-          onSubmit={handleUpdateNurse}
-          onCancel={() => setEditingNurse(null)}
-        />
-      )}
+      <DataTable columns={columns} data={nurses} />
+      <DeleteModal
+        open={deleteId !== null}
+        title="Delete Patient"
+        message="Do you want to continue?"
+        loading={deleting}
+        onCancel={() => setDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
     </section>
   );
 }

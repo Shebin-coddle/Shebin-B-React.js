@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
-import AdminTable from "../../components/table/AdminTable";
+import DataTable from "../../components/table/DataTable";
 import DetailCard from "../../components/DetailsView";
 import { getMedicalRecordsByPatientId } from "../../services/MedicalRecordService";
 import type { MedicalRecord } from "../../types/MedicalRecordTypes";
 
 function PatientMedicalRecords() {
   const patientId = Number(localStorage.getItem("user_id"));
-
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
-  const [selectedRecord, setSelectedRecord] =
-    useState<MedicalRecord | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<MedicalRecord | null>(
+    null,
+  );
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
 
@@ -49,13 +49,13 @@ function PatientMedicalRecords() {
       header: "Treatment",
       render: (record: MedicalRecord) => record.treatment,
     },
-     {
+    {
       header: "Date",
       render: (record: MedicalRecord) => record.status,
     },
     {
       header: "Date",
-      render: (record: MedicalRecord) => record.diagnosis_date,
+      render: (record: MedicalRecord) => new Date(record.diagnosis_date).toLocaleDateString("en-IN"),
     },
     {
       header: "Actions",
@@ -79,7 +79,7 @@ function PatientMedicalRecords() {
     <section>
       <h2>My Medical Records</h2>
 
-      <AdminTable columns={columns} data={medicalRecords} />
+      <DataTable columns={columns} data={medicalRecords} />
 
       {selectedRecord && (
         <DetailCard
@@ -93,7 +93,7 @@ function PatientMedicalRecords() {
               label: "Treatment",
               value: selectedRecord.treatment,
             },
-              {
+            {
               label: "Treatment",
               value: selectedRecord.status,
             },

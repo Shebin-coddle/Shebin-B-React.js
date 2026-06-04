@@ -1,36 +1,20 @@
-import {
-  useEffect,
-  useState,
-  type ChangeEvent,
-  type SyntheticEvent,
-} from "react";
-
-import AdminTable from "../../components/table/AdminTable";
-
-import { getAllBills, updateBill } from "../../services/BillService";
-
-import type { Bill, UpdateBillRequest } from "../../types/BillTypes";
-import DetailCard from "../../components/DetailsView";
-import EditForm from "../../components/EditForm";
+import { useEffect, useState } from "react";
+import DataTable from "../../components/table/DataTable";
+import { getAllBills, removeBill } from "../../services/BillService";
+import type { Bill } from "../../types/BillTypes";
+import { useNavigate } from "react-router-dom";
+import { getAllUsers } from "../../services/UserService";
+import DeleteModal from "../../components/DeleteModal";
 
 function AdminBills() {
   const [bills, setBills] = useState<Bill[]>([]);
-
-  const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
-
-  const [editingBill, setEditingBill] = useState<Bill | null>(null);
-
-  const [editForm, setEditForm] = useState<UpdateBillRequest>({
-    amount: 0,
-    date: "",
-    description: "",
-    status: "",
-    mode_of_payment: "",
-  });
-
   const [loading, setLoading] = useState<boolean>(true);
-
   const [error, setError] = useState<string>("");
+  const [userName, setUserName] = useState<Record<number, string>>({});
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchBills() {
@@ -52,78 +36,44 @@ function AdminBills() {
     fetchBills();
   }, []);
 
-  function handleView(id: number) {
-    const bill = bills.find((bill) => bill.id === id);
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const users = await getAllUsers();
 
-    if (bill) {
-      setSelectedBill(bill);
+        const map = Object.fromEntries(
+          users.map((u) => [u.id, `${u.first_name} ${u.last_name}`]),
+        );
+
+        setUserName(map);
+      } catch (err) {
+        console.error("Failed to load users", err);
+      }
     }
+
+    fetchUsers();
+  }, []);
+
+  function openDeleteModal(id: number) {
+    setDeleteId(id);
   }
 
-  function handleEdit(id: number) {
-    const bill = bills.find((bill) => bill.id === id);
-
-    if (bill) {
-      setEditingBill(bill);
-
-      setEditForm({
-        amount: bill.amount,
-
-        date: bill.date.split("T")[0],
-
-        description: bill.description,
-
-        status: bill.status,
-
-        mode_of_payment: bill.mode_of_payment,
-      });
-    }
-  }
-
-  function handleEditChange(
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) {
-    const { name, value } = e.target;
-
-    setEditForm((prevForm) => ({
-      ...prevForm,
-
-      [name]: name === "amount" ? Number(value) : value,
-    }));
-  }
-
-  async function handleUpdateBill(e: SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    if (!editingBill) {
-      return;
-    }
+  async function confirmDelete() {
+    if (!deleteId) return;
 
     try {
-      await updateBill(editingBill.id, editForm);
+      setDeleting(true);
+      setError("");
 
-      setBills((prevBills) =>
-        prevBills.map((bill) =>
-          bill.id === editingBill.id
-            ? {
-                ...bill,
-                amount: editForm.amount,
-                date: editForm.date,
-                description: editForm.description,
-                status: editForm.status,
-                mode_of_payment: editForm.mode_of_payment,
-              }
-            : bill,
-        ),
-      );
+      await removeBill(deleteId);
 
-      setEditingBill(null);
+      setBills((prev) => prev.filter((bill) => bill.id !== deleteId));
+
+      setDeleteId(null);
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Error occurred while updating bill");
-      }
+      setError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -132,10 +82,9 @@ function AdminBills() {
       header: "ID",
       render: (bill: Bill) => bill.id,
     },
-
     {
-      header: "Patient ID",
-      render: (bill: Bill) => bill.patient_id,
+      header: "Name",
+      render: (bill: Bill) => userName[bill.patient_id] || bill.patient_id,
     },
 
     {
@@ -162,9 +111,12 @@ function AdminBills() {
       header: "Actions",
       render: (bill: Bill) => (
         <div className="table-actions">
-          <button onClick={() => handleView(bill.id)}>View</button>
-
-          <button onClick={() => handleEdit(bill.id)}>Edit</button>
+          <button onClick={() => navigate(`/admin-bills/edit/${bill.id}`)}>
+            Edit
+          </button>
+          <button onClick={() => openDeleteModal(bill.id)}>
+            Delete
+          </button>
         </div>
       ),
     },
@@ -181,109 +133,19 @@ function AdminBills() {
   return (
     <section>
       <h2>Bills</h2>
+      <button onClick={() => navigate("/admin-bills/add")}>
+        Add bill
+      </button>
 
-      <AdminTable columns={columns} data={bills} />
-
-      {selectedBill && (
-        <DetailCard
-          title="Selected Bill Details"
-          details={[
-            {
-              label: "ID",
-              value: selectedBill.id,
-            },
-            {
-              label: "Patient ID",
-              value: selectedBill.patient_id,
-            },
-            {
-              label: "Amount",
-              value: selectedBill.amount,
-            },
-            {
-              label: "Status",
-              value: selectedBill.status,
-            },
-            {
-              label: "Payment Mode",
-              value: selectedBill.mode_of_payment,
-            },
-          ]}
-          onClose={() => setSelectedBill(null)}
-        />
-      )}
-      {editingBill && (
-        <EditForm
-          title="Edit Bill"
-          fields={[
-            {
-              name: "amount",
-              label: "Amount",
-              type: "number",
-              value: editForm.amount,
-            },
-            {
-              name: "date",
-              label: "Date",
-              type: "date",
-              value: editForm.date,
-            },
-            {
-              name: "description",
-              label: "Description",
-              type: "text",
-              value: editForm.description,
-            },
-            {
-              name: "status",
-              label: "Status",
-              type: "select",
-              value: editForm.status,
-              options: [
-                {
-                  label: "Pending",
-                  value: "pending",
-                },
-                {
-                  label: "Completed",
-                  value: "completed",
-                },
-                {
-                  label: "Cancelled",
-                  value: "cancelled",
-                },
-              ],
-            },
-            {
-              name: "mode_of_payment",
-              label: "Mode of Payment",
-              type: "select",
-              value: editForm.mode_of_payment,
-              options: [
-                {
-                  label: "Cash",
-                  value: "cash",
-                },
-                {
-                  label: "UPI",
-                  value: "upi",
-                },
-                {
-                  label: "Card",
-                  value: "card",
-                },
-                {
-                  label: "Net Banking",
-                  value: "netbanking",
-                },
-              ],
-            },
-          ]}
-          onChange={handleEditChange}
-          onSubmit={handleUpdateBill}
-          onCancel={() => setEditingBill(null)}
-        />
-      )}
+      <DataTable columns={columns} data={bills} />
+      <DeleteModal
+        open={deleteId !== null}
+        title="Delete bill"
+        message="Do you want to continue?"
+        loading={deleting}
+        onCancel={() => setDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
     </section>
   );
 }

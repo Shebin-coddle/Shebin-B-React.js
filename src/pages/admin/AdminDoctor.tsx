@@ -1,23 +1,20 @@
-import { useEffect, useState,type ChangeEvent, type SyntheticEvent } from "react";
-import AdminTable from "../../components/table/AdminTable";
-import { getAllDoctors, updateDoctor } from "../../services/DoctorService";
-import type { Doctor, UpdateDoctorRequest } from "../../types/DoctorTypes";
-import DetailCard from "../../components/DetailsView";
-import EditForm from "../../components/EditForm";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import DataTable from "../../components/table/DataTable";
+import { getAllDoctors, removeDoctor } from "../../services/DoctorService";
+import type { Doctor } from "../../types/DoctorTypes";
+import { getAllUsers } from "../../services/UserService";
+import DeleteModal from "../../components/DeleteModal";
 
 function AdminDoctors() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
-  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
-  const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
+  const [userName, setUserName] = useState<Record<number, string>>({});
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const [editForm, setEditForm] = useState<UpdateDoctorRequest>({
-    specialization: "",
-    salary: 0,
-    department_id: 0,
-  });
-
+  const navigate = useNavigate();
   useEffect(() => {
     async function fetchDoctors() {
       try {
@@ -37,69 +34,46 @@ function AdminDoctors() {
     fetchDoctors();
   }, []);
 
-  function handleView(userId: number) {
-    const doctor = doctors.find((doctor) => doctor.user_id === userId);
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const users = await getAllUsers();
 
-    if (doctor) {
-      setSelectedDoctor(doctor);
+        const map = Object.fromEntries(
+          users.map((u) => [u.id, `Dr.${u.first_name} ${u.last_name}`]),
+        );
+
+        setUserName(map);
+      } catch (err) {
+        console.error("Failed to load users", err);
+      }
     }
+
+    fetchUsers();
+  }, []);
+
+  function openDeleteModal(id: number) {
+    setDeleteId(id);
   }
 
-  function handleEdit(userId: number) {
-    console.log("Edit doctor", userId);
-    const doctor = doctors.find((doctor) => doctor.user_id === userId);
-    if (doctor) {
-      setEditingDoctor(doctor);
-
-      setEditForm({
-        specialization: doctor.specialization,
-        salary: doctor.salary,
-        department_id: doctor.department_id,
-      });
-    }
-  }
-
- function handleEditChange(
-  e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-) {
-    const { name, value } = e.target;
-
-    setEditForm((prevForm) => ({
-      ...prevForm,
-      [name]:
-        name === "salary" || name === "department_id" ? Number(value) : value,
-    }));
-  }
-
-  async function handleUpdateDoctor(e: SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    if (!editingDoctor) {
-      return;
-    }
+  async function confirmDelete() {
+    if (!deleteId) return;
 
     try {
-      await updateDoctor(editingDoctor.user_id, editForm);
-      setDoctors((prevDoctors) =>
-        prevDoctors.map((doctor) =>
-          doctor.user_id === editingDoctor.user_id
-            ? {
-                ...doctor,
-                specialization: editForm.specialization,
-                salary: editForm.salary,
-                department_id: editForm.department_id,
-              }
-            : doctor,
-        ),
+      setDeleting(true);
+      setError("");
+
+      await removeDoctor(deleteId);
+
+      setDoctors((prev) =>
+        prev.filter((doctor) => doctor.user_id !== deleteId),
       );
 
-      setEditingDoctor(null);
+      setDeleteId(null);
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Error occurred while updating doctor");
-      }
+      setError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -107,6 +81,10 @@ function AdminDoctors() {
     {
       header: "User ID",
       render: (doctor: Doctor) => doctor.user_id,
+    },
+    {
+      header: "Name",
+      render: (doctor: Doctor) => userName[doctor.user_id] || doctor.user_id,
     },
     {
       header: "Specialization",
@@ -124,8 +102,14 @@ function AdminDoctors() {
       header: "Actions",
       render: (doctor: Doctor) => (
         <div className="table-actions">
-          <button onClick={() => handleView(doctor.user_id)}>View</button>
-          <button onClick={() => handleEdit(doctor.user_id)}>Edit</button>
+          <button
+            onClick={() => navigate(`/admin-doctors/edit/${doctor.user_id}`)}
+          >
+            Edit
+          </button>
+          <button onClick={() => openDeleteModal(doctor.user_id)}>
+            Delete
+          </button>
         </div>
       ),
     },
@@ -143,49 +127,16 @@ function AdminDoctors() {
     <section>
       <h2>Doctors</h2>
 
-      <AdminTable columns={columns} data={doctors} />
+      <DataTable columns={columns} data={doctors} />
 
-      {selectedDoctor && (
-        <DetailCard
-          title="Selected Doctor Details"
-          details={[
-            { label: "User ID", value: selectedDoctor.user_id },
-            { label: "Specialization", value: selectedDoctor.specialization },
-            { label: "Salary", value: selectedDoctor.salary },
-            { label: "Department ID", value: selectedDoctor.department_id },
-          ]}
-          onClose={() => setSelectedDoctor(null)}
-        />
-      )}
-
-      {editingDoctor && (
-  <EditForm
-    title="Edit Doctor"
-    fields={[
-      {
-        name: "specialization",
-        label: "Specialization",
-        type: "text",
-        value: editForm.specialization,
-      },
-      {
-        name: "salary",
-        label: "Salary",
-        type: "number",
-        value: editForm.salary,
-      },
-      {
-        name: "department_id",
-        label: "Department ID",
-        type: "number",
-        value: editForm.department_id,
-      },
-    ]}
-    onChange={handleEditChange}
-    onSubmit={handleUpdateDoctor}
-    onCancel={() => setEditingDoctor(null)}
-  />
-)}
+      <DeleteModal
+        open={deleteId !== null}
+        title="Delete Doctor"
+        message="Do you want to continue?"
+        loading={deleting}
+        onCancel={() => setDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
     </section>
   );
 }

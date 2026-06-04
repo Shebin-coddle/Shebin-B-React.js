@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import AdminTable from "../../components/table/AdminTable";
+import DataTable from "../../components/table/DataTable";
 import {
   cancelAppointment,
   getAllAppointments,
@@ -12,7 +12,7 @@ function PatientAppointments() {
   const patientId = Number(localStorage.getItem("user_id"));
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-    useState<Appointment | null>(null);
+  useState<Appointment | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [doctors, setDoctors] = useState<DoctorDetails[]>([]);
@@ -44,8 +44,6 @@ function PatientAppointments() {
 
     fetchPatientAppointments();
   }, [patientId]);
-
-  
 
   async function handleCancel(id: number) {
     const confirmCancel = window.confirm(
@@ -95,7 +93,7 @@ function PatientAppointments() {
     },
     {
       header: "Date",
-      render: (appointment: Appointment) => appointment.appointment_date,
+      render: (appointment: Appointment) => new Date(appointment.appointment_date).toLocaleDateString("en-IN"),
     },
     {
       header: "Start Time",
@@ -113,8 +111,6 @@ function PatientAppointments() {
       header: "Actions",
       render: (appointment: Appointment) => (
         <div className="table-actions">
-         
-
           {appointment.status === "pending" && (
             <button onClick={() => handleCancel(appointment.id)}>Cancel</button>
           )}
@@ -135,9 +131,7 @@ function PatientAppointments() {
     <section>
       <h2>My Appointments</h2>
 
-      <AdminTable columns={columns} data={appointments} />
-
-      
+      <DataTable columns={columns} data={appointments} />
     </section>
   );
 }

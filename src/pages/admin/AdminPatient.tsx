@@ -1,25 +1,20 @@
-import {
-  useEffect,
-  useState,
-  type ChangeEvent,
-  type SyntheticEvent,
-} from "react";
-import AdminTable from "../../components/table/AdminTable";
-import { getAllPatients, updatePatient } from "../../services/PatientService";
-import type { Patient, UpdatePatientRequest } from "../../types/PatientTypes";
-import DetailCard from "../../components/DetailsView";
-import EditForm from "../../components/EditForm";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import DataTable from "../../components/table/DataTable";
+import { getAllPatients, removePatient } from "../../services/PatientService";
+import type { Patient } from "../../types/PatientTypes";
+import { getAllUsers } from "../../services/UserService";
+import DeleteModal from "../../components/DeleteModal";
 
 function AdminPatients() {
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
-  const [editForm, setEditForm] = useState<UpdatePatientRequest>({
-    dob: "",
-    blood_group: "",
-  });
+  const [userName, setUserName] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchPatients() {
@@ -40,67 +35,44 @@ function AdminPatients() {
     fetchPatients();
   }, []);
 
-  function handleView(userId: number) {
-    const patient = patients.find((patient) => patient.user_id === userId);
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const users = await getAllUsers();
 
-    if (patient) {
-      setSelectedPatient(patient);
+        const map = Object.fromEntries(
+          users.map((u) => [u.id, `${u.first_name} ${u.last_name}`]),
+        );
+
+        setUserName(map);
+      } catch (err) {
+        console.error("Failed to load users", err);
+      }
     }
+
+    fetchUsers();
+  }, []);
+
+  function openDeleteModal(id: number) {
+    setDeleteId(id);
   }
 
-  function handleEdit(userId: number) {
-    const patient = patients.find((patient) => patient.user_id === userId);
-
-    if (patient) {
-      setEditingPatient(patient);
-
-      setEditForm({
-        dob: patient.dob ? patient.dob.split("T")[0] : "",
-        blood_group: patient.blood_group,
-      });
-    }
-  }
-
-  function handleEditChange(
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) {
-    const { name, value } = e.target;
-
-    setEditForm((prevForm) => ({
-      ...prevForm,
-      [name]: value,
-    }));
-  }
-
-  async function handleUpdatePatient(e: SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    if (!editingPatient) {
-      return;
-    }
+  async function confirmDelete() {
+    if (!deleteId) return;
 
     try {
-      await updatePatient(editingPatient.user_id, editForm);
+      setDeleting(true);
+      setError("");
 
-      setPatients((prevPatients) =>
-        prevPatients.map((patient) =>
-          patient.user_id === editingPatient.user_id
-            ? {
-                ...patient,
-                dob: editForm.dob,
-                blood_group: editForm.blood_group,
-              }
-            : patient,
-        ),
-      );
+      await removePatient(deleteId);
 
-      setEditingPatient(null);
+      setPatients((prev) => prev.filter((patient) => patient.user_id !== deleteId));
+
+      setDeleteId(null);
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Error occurred while updating patient");
-      }
+      setError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -110,8 +82,14 @@ function AdminPatients() {
       render: (patient: Patient) => patient.user_id,
     },
     {
+      header: "Name",
+      render: (patient: Patient) =>
+        userName[patient.user_id] || patient.user_id,
+    },
+    {
       header: "Date of Birth",
-      render: (patient: Patient) => patient.dob,
+      render: (patient: Patient) =>
+        new Date(patient.dob).toLocaleDateString("en-IN"),
     },
     {
       header: "Blood Group",
@@ -121,8 +99,14 @@ function AdminPatients() {
       header: "Actions",
       render: (patient: Patient) => (
         <div className="table-actions">
-          <button onClick={() => handleView(patient.user_id)}>View</button>
-          <button onClick={() => handleEdit(patient.user_id)}>Edit</button>
+          <button
+            onClick={() => navigate(`/admin-patients/edit/${patient.user_id}`)}
+          >
+            Edit
+          </button>
+          <button onClick={() => openDeleteModal(patient.user_id)}>
+            Delete
+          </button>
         </div>
       ),
     },
@@ -139,46 +123,16 @@ function AdminPatients() {
   return (
     <section>
       <h2>Patients</h2>
+      <DataTable columns={columns} data={patients} />
 
-      <AdminTable columns={columns} data={patients} />
-
-      {selectedPatient && (
-        <DetailCard
-          title="Selected Patient Details"
-          details={[
-            { label: "User ID", value: selectedPatient.user_id },
-            { label: "Date of Birth", value: selectedPatient.dob },
-            {
-              label: "Blood Group",
-              value: selectedPatient.blood_group || "N/A",
-            },
-          ]}
-          onClose={() => setSelectedPatient(null)}
-        />
-      )}
-
-      {editingPatient && (
-        <EditForm
-          title="Edit Patient"
-          fields={[
-            {
-              name: "dob",
-              label: "Date of Birth",
-              type: "date",
-              value: editForm.dob,
-            },
-            {
-              name: "blood_group",
-              label: "Blood Group",
-              type: "text",
-              value: editForm.blood_group || "",
-            },
-          ]}
-          onChange={handleEditChange}
-          onSubmit={handleUpdatePatient}
-          onCancel={() => setEditingPatient(null)}
-        />
-      )}
+      <DeleteModal
+        open={deleteId !== null}
+        title="Delete Patient"
+        message="Do you want to continue?"
+        loading={deleting}
+        onCancel={() => setDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
     </section>
   );
 }

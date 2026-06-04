@@ -1,5 +1,6 @@
 import type { Patient, UpdatePatientRequest,PatientDetails } from "../types/PatientTypes";
 
+
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export async function getAllPatients(): Promise<Patient[]> {
@@ -66,3 +67,22 @@ export async function getPatientDetailsById(
 
   return data.data;
 }
+
+export const removePatient = async (id: number) => {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`http://localhost:3000/patient/remove-patient/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to delete patient");
+  }
+
+  return data;
+};

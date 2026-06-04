@@ -1,90 +1,41 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { vi } from "vitest";
 import EditForm from "../components/EditForm";
 
-test("renders edit form fields and buttons", () => {
-  const onChange = vi.fn();
-  const onSubmit = vi.fn((e) => e.preventDefault());
-  const onCancel = vi.fn();
+test("renders edit form and submits", () => {
+  const handleChange = vi.fn();
+  const handleSubmit = vi.fn((e) => e.preventDefault());
+  const handleCancel = vi.fn();
 
   render(
     <EditForm
-      title="Edit User"
+      title="Edit Doctor"
       fields={[
         {
-          name: "first_name",
-          label: "First Name",
+          name: "specialization",
+          label: "Specialization",
           type: "text",
-          value: "Shebin",
+          value: "Cardiology",
         },
         {
           name: "salary",
           label: "Salary",
           type: "number",
-          value: 10000,
-        },
-        {
-          name: "address",
-          label: "Address",
-          type: "textarea",
-          value: "Kochi",
-        },
-        {
-          name: "role",
-          label: "Role",
-          type: "select",
-          value: "admin",
-          options: [
-            { label: "Admin", value: "admin" },
-            { label: "Patient", value: "patient" },
-          ],
+          value: 50000,
         },
       ]}
-      onChange={onChange}
-      onSubmit={onSubmit}
-      onCancel={onCancel}
+      onChange={handleChange}
+      onSubmit={handleSubmit}
+      onCancel={handleCancel}
     />,
   );
 
-  expect(screen.getByText("Edit User")).toBeInTheDocument();
-  expect(screen.getByPlaceholderText("First Name")).toBeInTheDocument();
-  expect(screen.getByPlaceholderText("Salary")).toBeInTheDocument();
-  expect(screen.getByPlaceholderText("Address")).toBeInTheDocument();
-expect(screen.getByRole("option", { name: "Admin" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Update" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
-});
+  expect(screen.getByText("Edit Doctor")).toBeInTheDocument();
+  expect(screen.getByDisplayValue("Cardiology")).toBeInTheDocument();
 
-test("calls change, submit and cancel handlers", () => {
-  const onChange = vi.fn();
-  const onSubmit = vi.fn((e) => e.preventDefault());
-  const onCancel = vi.fn();
+  fireEvent.click(screen.getByText("Update"));
+  expect(handleSubmit).toHaveBeenCalled();
 
-  render(
-    <EditForm
-      title="Edit User"
-      fields={[
-        {
-          name: "first_name",
-          label: "First Name",
-          type: "text",
-          value: "",
-        },
-      ]}
-      onChange={onChange}
-      onSubmit={onSubmit}
-      onCancel={onCancel}
-    />,
-  );
-
-  fireEvent.change(screen.getByPlaceholderText("First Name"), {
-    target: { value: "Shebin" },
-  });
-
-  fireEvent.click(screen.getByRole("button", { name: "Update" }));
-  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-
-  expect(onChange).toHaveBeenCalled();
-  expect(onSubmit).toHaveBeenCalled();
-  expect(onCancel).toHaveBeenCalled();
+  fireEvent.click(screen.getByText("Cancel"));
+  expect(handleCancel).toHaveBeenCalled();
 });

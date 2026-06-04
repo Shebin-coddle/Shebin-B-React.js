@@ -4,6 +4,7 @@ export type User = {
   last_name: string;
   phone: string | null;
   email: string | null;
+  password: string;
   role_id: number;
 };
 
@@ -14,3 +15,12 @@ export type UpdateUserRequest = {
   email: string | null;
   role_id: number;
 };
+export type CreateUserRequest = {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  email: string;
+  password: string;
+  role_id: number;
+};
+

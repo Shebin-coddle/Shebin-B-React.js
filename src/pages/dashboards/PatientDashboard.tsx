@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import DashboardCard from "../../components/dashboard/DashboardCard";
+import DashboardCard from "./DashboardCard";
 import { getAllAppointments } from "../../services/AppointmentService";
 import { getAllBills } from "../../services/BillService";
 import { getMedicalRecordsByPatientId } from "../../services/MedicalRecordService";

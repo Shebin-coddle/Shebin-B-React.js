@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import AdminTable from "../../components/table/AdminTable";
+import DataTable from "../../components/table/DataTable";
 
 import { getAllBills } from "../../services/BillService";
 import type { Bill } from "../../types/BillTypes";
@@ -43,7 +43,7 @@ function PatientBills() {
     },
     {
       header: "Date",
-      render: (bill: Bill) => bill.date,
+      render: (bill: Bill) =>new Date(bill.date).toLocaleDateString("en-IN"),
     },
     {
       header: "Description",
@@ -57,21 +57,14 @@ function PatientBills() {
       header: "Payment Mode",
       render: (bill: Bill) => bill.mode_of_payment || "N/A",
     },
-   {
-  header: "Actions",
-  render: (bill: Bill) => (
-    <div className="table-actions">
-
-
-         {bill.status === "pending" && (
-        <button>
-          Pay
-        </button>
-      )}
-
-    </div>
-  ),
-}
+    {
+      header: "Actions",
+      render: (bill: Bill) => (
+        <div className="table-actions">
+          {bill.status === "pending" && <button>Pay</button>}
+        </div>
+      ),
+    },
   ];
 
   if (loading) {
@@ -86,7 +79,7 @@ function PatientBills() {
     <section>
       <h2>My Bills</h2>
 
-      <AdminTable columns={columns} data={bills} />
+      <DataTable columns={columns} data={bills} />
     </section>
   );
 }

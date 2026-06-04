@@ -13,6 +13,7 @@ export type UpdateDoctorRequest = {
   salary: number;
   department_id: number;
 };
+
 export type DoctorDetails = {
   user_id: number;
   first_name: string;

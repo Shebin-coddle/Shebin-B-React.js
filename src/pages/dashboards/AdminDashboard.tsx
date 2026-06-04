@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import DashboardCard from "../../components/dashboard/DashboardCard";
+import DashboardCard from "./DashboardCard";
 import {
   getAdminDashboardSummary,
   type AdminDashboardSummary,
@@ -46,20 +46,20 @@ function AdminDashboard() {
       <h2>Overview</h2>
 
       <div className="dashboard-card-grid">
-        <DashboardCard title="Total Users" count={summary.totalUsers} />
-        <DashboardCard title="Total Doctors" count={summary.totalDoctors} />
-        <DashboardCard title="Total Patients" count={summary.totalPatients} />
-        <DashboardCard title="Total Nurses" count={summary.totalNurses} />
+        <DashboardCard title="Users" count={summary.totalUsers} />
+        <DashboardCard title="Doctors" count={summary.totalDoctors} />
+        <DashboardCard title="Patients" count={summary.totalPatients} />
+        <DashboardCard title="Nurses" count={summary.totalNurses} />
         <DashboardCard
           title="Total Appointments"
           count={summary.totalAppointments}
         />
-        <DashboardCard title="Total Bills" count={summary.totalBills} />
+        <DashboardCard title="Bills" count={summary.totalBills} />
         <DashboardCard
-          title="Total Departments"
+          title="Departments"
           count={summary.totalDepartments}
         />
-        <DashboardCard title="Total Medicines" count={summary.totalMedicines} />
+        <DashboardCard title="Medicines" count={summary.totalMedicines} />
       </div>
     </section>
   );

@@ -1,50 +1,26 @@
-import {
-  useEffect,
-  useState,
-  type ChangeEvent,
-  type SyntheticEvent,
-} from "react";
-
-import AdminTable from "../../components/table/AdminTable";
-
+import { useEffect, useState } from "react";
+import DataTable from "../../components/table/DataTable";
 import {
   getAllMedicines,
-  updateMedicine,
+  removeMedicine,
 } from "../../services/MedicineService";
-
-import type {
-  Medicine,
-  UpdateMedicineRequest,
-} from "../../types/MedicineTypes";
-
-import DetailCard from "../../components/DetailsView";
-import EditForm from "../../components/EditForm";
+import type { Medicine } from "../../types/MedicineTypes";
+import { useNavigate } from "react-router-dom";
+import DeleteModal from "../../components/DeleteModal";
 
 function AdminMedicines() {
+  
   const [medicines, setMedicines] = useState<Medicine[]>([]);
-
-  const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(
-    null,
-  );
-
-  const [editingMedicine, setEditingMedicine] = useState<Medicine | null>(null);
-
-  const [editForm, setEditForm] = useState<UpdateMedicineRequest>({
-    medicine_name: "",
-    description: "",
-    stock: 0,
-    expiry_date: "",
-  });
-
   const [loading, setLoading] = useState<boolean>(true);
-
   const [error, setError] = useState<string>("");
+  const navigate = useNavigate();
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     async function fetchMedicines() {
       try {
         const medicineData = await getAllMedicines();
-
         setMedicines(medicineData);
       } catch (err) {
         if (err instanceof Error) {
@@ -56,83 +32,31 @@ function AdminMedicines() {
         setLoading(false);
       }
     }
-
     fetchMedicines();
   }, []);
 
-  function handleView(id: number) {
-    const medicine = medicines.find((medicine) => medicine.id === id);
-
-    if (medicine) {
-      setSelectedMedicine(medicine);
-    }
+  function openDeleteModal(id: number) {
+    setDeleteId(id);
   }
 
-  function handleEdit(id: number) {
-    const medicine = medicines.find((medicine) => medicine.id === id);
-
-    if (medicine) {
-      setEditingMedicine(medicine);
-
-      setEditForm({
-        medicine_name: medicine.medicine_name,
-
-        description: medicine.description,
-
-        stock: medicine.stock,
-
-        expiry_date: medicine.expiry_date.split("T")[0],
-      });
-    }
-  }
-
-  function handleEditChange(
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) {
-    const { name, value } = e.target;
-
-    setEditForm((prevForm) => ({
-      ...prevForm,
-
-      [name]: name === "stock" ? Number(value) : value,
-    }));
-  }
-
-  async function handleUpdateMedicine(e: SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    if (!editingMedicine) {
-      return;
-    }
+  async function confirmDelete() {
+    if (!deleteId) return;
 
     try {
-      await updateMedicine(editingMedicine.id, editForm);
+      setDeleting(true);
+      setError("");
 
-      setMedicines((prevMedicines) =>
-        prevMedicines.map((medicine) =>
-          medicine.id === editingMedicine.id
-            ? {
-                ...medicine,
+      await removeMedicine(deleteId);
 
-                medicine_name: editForm.medicine_name,
-
-                description: editForm.description,
-
-                stock: editForm.stock,
-
-                expiry_date: editForm.expiry_date,
-              }
-            : medicine,
-        ),
+      setMedicines((prev) =>
+        prev.filter((medicine) => medicine.id !== deleteId),
       );
 
-      setEditingMedicine(null);
+      setDeleteId(null);
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Error occurred while updating medicine");
-      }
+      setError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -141,7 +65,6 @@ function AdminMedicines() {
       header: "ID",
       render: (medicine: Medicine) => medicine.id,
     },
-
     {
       header: "Medicine Name",
       render: (medicine: Medicine) => medicine.medicine_name,
@@ -151,19 +74,21 @@ function AdminMedicines() {
       header: "Stock",
       render: (medicine: Medicine) => medicine.stock,
     },
-
     {
       header: "Expiry Date",
-      render: (medicine: Medicine) => medicine.expiry_date,
+      render: (medicine: Medicine) =>
+        new Date(medicine.expiry_date).toLocaleDateString("en-IN"),
     },
-
     {
       header: "Actions",
       render: (medicine: Medicine) => (
         <div className="table-actions">
-          <button onClick={() => handleView(medicine.id)}>View</button>
-
-          <button onClick={() => handleEdit(medicine.id)}>Edit</button>
+          <button
+            onClick={() => navigate(`/admin-medicines/edit/${medicine.id}`)}
+          >
+            Edit
+          </button>
+          <button onClick={() => openDeleteModal(medicine.id)}>Delete</button>
         </div>
       ),
     },
@@ -180,71 +105,18 @@ function AdminMedicines() {
   return (
     <section>
       <h2>Medicines</h2>
-
-      <AdminTable columns={columns} data={medicines} />
-
-      {selectedMedicine && (
-        <DetailCard
-          title="Selected Medicine Details"
-          details={[
-            {
-              label: "ID",
-              value: selectedMedicine.id,
-            },
-            {
-              label: "Name",
-              value: selectedMedicine.medicine_name,
-            },
-            {
-              label: "Description",
-              value: selectedMedicine.description,
-            },
-            {
-              label: "Stock",
-              value: selectedMedicine.stock,
-            },
-            {
-              label: "Expiry Date",
-              value: selectedMedicine.expiry_date,
-            },
-          ]}
-          onClose={() => setSelectedMedicine(null)}
-        />
-      )}
-      {editingMedicine && (
-        <EditForm
-          title="Edit Medicine"
-          fields={[
-            {
-              name: "medicine_name",
-              label: "Medicine Name",
-              type: "text",
-              value: editForm.medicine_name,
-            },
-            {
-              name: "description",
-              label: "Description",
-              type: "textarea",
-              value: editForm.description,
-            },
-            {
-              name: "stock",
-              label: "Stock",
-              type: "number",
-              value: editForm.stock,
-            },
-            {
-              name: "expiry_date",
-              label: "Expiry Date",
-              type: "date",
-              value: editForm.expiry_date,
-            },
-          ]}
-          onChange={handleEditChange}
-          onSubmit={handleUpdateMedicine}
-          onCancel={() => setEditingMedicine(null)}
-        />
-      )}
+      <button onClick={() => navigate("/admin-medicines/add")}>
+        Add medicine
+      </button>{" "}
+      <DataTable columns={columns} data={medicines} />
+      <DeleteModal
+        open={deleteId !== null}
+        title="Delete Medicine"
+        message="Do you want to continue?"
+        loading={deleting}
+        onCancel={() => setDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
     </section>
   );
 }
