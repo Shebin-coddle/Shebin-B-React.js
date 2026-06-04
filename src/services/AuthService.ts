@@ -1,11 +1,11 @@
-import type { LoginRequest, LoginResponse } from "../types/authTypes";
+import type { LoginRequest, LoginResponse } from "../types/AuthTypes";
+const API_URL = import.meta.env.VITE_API_URL;
 
-const API_url = "http://localhost:3000/authentication";
 
-export async function loginUser(
+export async function LoginUser(
   loginData: LoginRequest,
 ): Promise<LoginResponse> {
-  const response = await fetch(`${API_url}/login`, {
+  const response = await fetch(`${API_URL}/authentication/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
