@@ -1,15 +1,23 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import Login from "../pages/Login";
-import { LoginUser } from "../services/AuthService";
+import Login from "../pages/login";
+import { loginUser } from "../services/authService";
+import { vi } from "vitest";
+
+vi.mock("../services/authService", () => ({
+  loginUser: vi.fn(),
+}));
+
+const mockedLoginUser = vi.mocked(loginUser);
 
 const mockNavigate = vi.fn();
 
 vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual<typeof import("react-router-dom")>(
-    "react-router-dom",
-  );
+  const actual =
+    await vi.importActual<typeof import("react-router-dom")>(
+      "react-router-dom",
+    );
 
   return {
     ...actual,
@@ -17,11 +25,13 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
-vi.mock("../services/AuthService", () => ({
-  LoginUser: vi.fn(),
-}));
-
-const mockedLoginUser = vi.mocked(LoginUser);
+function renderLogin() {
+  return render(
+    <MemoryRouter>
+      <Login />
+    </MemoryRouter>,
+  );
+}
 
 beforeEach(() => {
   localStorage.clear();
@@ -30,54 +40,46 @@ beforeEach(() => {
 });
 
 test("renders login form", () => {
-  render(
-    <MemoryRouter>
-      <Login />
-    </MemoryRouter>,
-  );
+  renderLogin();
 
   expect(screen.getByRole("heading", { name: "Login" })).toBeInTheDocument();
-  expect(screen.getByLabelText("Email")).toBeInTheDocument();
-  expect(screen.getByLabelText("Password")).toBeInTheDocument();
+
+  expect(screen.getByPlaceholderText("Enter email")).toBeInTheDocument();
+
+  expect(screen.getByPlaceholderText("Enter password")).toBeInTheDocument();
+
+  expect(screen.getByRole("button", { name: "Login" })).toBeInTheDocument();
 });
 
-test("allows user to type email and password", () => {
-  render(
-    <MemoryRouter>
-      <Login />
-    </MemoryRouter>,
-  );
+test("allows user to type email and password", async () => {
+  renderLogin();
 
-  fireEvent.change(screen.getByLabelText("Email"), {
-    target: { value: "admin@gmail.com" },
-  });
+  const emailInput = screen.getByPlaceholderText("Enter email");
+  const passwordInput = screen.getByPlaceholderText("Enter password");
 
-  fireEvent.change(screen.getByLabelText("Password"), {
-    target: { value: "123456" },
-  });
+  await userEvent.type(emailInput, "admin@gmail.com");
+  await userEvent.type(passwordInput, "123456");
 
-  expect(screen.getByLabelText("Email")).toHaveValue("admin@gmail.com");
-  expect(screen.getByLabelText("Password")).toHaveValue("123456");
+  expect(emailInput).toHaveValue("admin@gmail.com");
+  expect(passwordInput).toHaveValue("123456");
 });
 
 test("shows error message when login fails", async () => {
-  mockedLoginUser.mockRejectedValue(new Error("Invalid email or password"));
+  mockedLoginUser.mockRejectedValueOnce(new Error("Invalid email or password"));
 
-  render(
-    <MemoryRouter>
-      <Login />
-    </MemoryRouter>,
+  renderLogin();
+
+  await userEvent.type(
+    screen.getByPlaceholderText("Enter email"),
+    "wrong@gmail.com",
   );
 
-  fireEvent.change(screen.getByLabelText("Email"), {
-    target: { value: "wrong@gmail.com" },
-  });
+  await userEvent.type(
+    screen.getByPlaceholderText("Enter password"),
+    "wrongpass",
+  );
 
-  fireEvent.change(screen.getByLabelText("Password"), {
-    target: { value: "123456" },
-  });
-
-  fireEvent.click(screen.getByRole("button", { name: "Login" }));
+  await userEvent.click(screen.getByRole("button", { name: "Login" }));
 
   expect(
     await screen.findByText("Invalid email or password"),
@@ -85,102 +87,83 @@ test("shows error message when login fails", async () => {
 });
 
 test("redirects admin user after successful login", async () => {
-mockedLoginUser.mockResolvedValue({
-  success: true,
-  message: "Login successful",
-  token: "test-token",
-  user: {
-    id: 1,
-    email: "admin@gmail.com",
-    role_id: 1,
-  },
-});
+  mockedLoginUser.mockResolvedValueOnce({
+    success: true,
+    message: "Login successful",
+    token: "admin-token",
+    user: {
+      id: 1,
+      email: "admin@gmail.com",
+      role_id: 1,
+    },
+  });
 
-  render(
-    <MemoryRouter>
-      <Login />
-    </MemoryRouter>,
+  renderLogin();
+
+  await userEvent.type(
+    screen.getByPlaceholderText("Enter email"),
+    "admin@gmail.com",
   );
 
-  fireEvent.change(screen.getByLabelText("Email"), {
-    target: { value: "admin@gmail.com" },
-  });
+  await userEvent.type(screen.getByPlaceholderText("Enter password"), "123456");
 
-  fireEvent.change(screen.getByLabelText("Password"), {
-    target: { value: "123456" },
-  });
+  await userEvent.click(screen.getByRole("button", { name: "Login" }));
 
-  fireEvent.click(screen.getByRole("button", { name: "Login" }));
+  expect(localStorage.getItem("token")).toBe("admin-token");
 
-  await waitFor(() => {
-    expect(mockNavigate).toHaveBeenCalledWith("/admin-dashboard");
-  });
-
-  expect(localStorage.getItem("token")).toBe("test-token");
   expect(localStorage.getItem("role_id")).toBe("1");
-  expect(localStorage.getItem("user_id")).toBe("1");
+
+  expect(mockNavigate).toHaveBeenCalledWith("/admin-dashboard");
 });
 
 test("redirects doctor user after successful login", async () => {
-mockedLoginUser.mockResolvedValue({
-  success: true,
-  message: "Login successful",
-  token: "doctor-token",
-  user: {
-    id: 2,
-    email: "doctor@gmail.com",
-    role_id: 2,
-  },
-});
+  mockedLoginUser.mockResolvedValueOnce({
+    success: true,
+    message: "Login successful",
+    token: "doctor-token",
+    user: {
+      id: 2,
+      email: "doctor@gmail.com",
+      role_id: 2,
+    },
+  });
 
-  render(
-    <MemoryRouter>
-      <Login />
-    </MemoryRouter>,
+  renderLogin();
+
+  await userEvent.type(
+    screen.getByPlaceholderText("Enter email"),
+    "doctor@gmail.com",
   );
 
-  fireEvent.change(screen.getByLabelText("Email"), {
-    target: { value: "doctor@gmail.com" },
-  });
+  await userEvent.type(screen.getByPlaceholderText("Enter password"), "123456");
 
-  fireEvent.change(screen.getByLabelText("Password"), {
-    target: { value: "123456" },
-  });
+  await userEvent.click(screen.getByRole("button", { name: "Login" }));
 
-  fireEvent.click(screen.getByRole("button", { name: "Login" }));
-
-  await waitFor(() => {
-    expect(mockNavigate).toHaveBeenCalledWith("/doctor-dashboard");
-  });
+  expect(mockNavigate).toHaveBeenCalledWith("/doctor-dashboard");
 });
 
 test("shows error for invalid role", async () => {
-mockedLoginUser.mockResolvedValue({
-  success: true,
-  message: "Login successful",
-  token: "test-token",
-  user: {
-    id: 10,
-    email: "user@gmail.com",
-    role_id: 99,
-  },
-});
+  mockedLoginUser.mockResolvedValueOnce({
+    success: true,
+    message: "Login successful",
+    token: "invalid-role-token",
+    user: {
+      id: 5,
+      email: "unknown@gmail.com",
+      role_id: 10,
+    },
+  });
 
-  render(
-    <MemoryRouter>
-      <Login />
-    </MemoryRouter>,
+  renderLogin();
+
+  await userEvent.type(
+    screen.getByPlaceholderText("Enter email"),
+    "unknown@gmail.com",
   );
 
-  fireEvent.change(screen.getByLabelText("Email"), {
-    target: { value: "user@gmail.com" },
-  });
+  await userEvent.type(screen.getByPlaceholderText("Enter password"), "123456");
 
-  fireEvent.change(screen.getByLabelText("Password"), {
-    target: { value: "123456" },
-  });
-
-  fireEvent.click(screen.getByRole("button", { name: "Login" }));
+  await userEvent.click(screen.getByRole("button", { name: "Login" }));
 
   expect(await screen.findByText("Invalid user role")).toBeInTheDocument();
 });

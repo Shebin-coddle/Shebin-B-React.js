@@ -1,7 +1,7 @@
-import { useState, type SyntheticEvent} from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LoginUser } from "../services/AuthService";
-import "../styles/Login.css";
+import { loginUser } from "../services/authService";
+import "../../src/styles/login.css";
 
 function Login() {
   const navigate = useNavigate();
@@ -11,83 +11,35 @@ function Login() {
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
-  function validateForm() {
-    if (!email.trim()) {
-      setError("Email is required");
-      return false;
-    }
-
-    if (!password.trim()) {
-      setError("Password is required");
-      return false;
-    }
-
-    const emailPattern =  /^[a-zA-Z0-9]+([._%+-][a-zA-Z0-9]+)*@[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*(\.[a-zA-Z]{2,})+$/;
-
-    if (!emailPattern.test(email)) {
-      setError("Enter a valid email address");
-      return false;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return false;
-    }
-
-    return true;
-  }
-
-  function navigateByRole(roleId: number) {
-    switch (roleId) {
-      case 1:
-        navigate("/admin-dashboard");
-        break;
-
-      case 2:
-        navigate("/doctor-dashboard");
-        break;
-
-      case 3:
-        navigate("/patient-dashboard");
-        break;
-
-      case 4:
-        navigate("/nurse-dashboard");
-        break;
-
-      default:
-        setError("Invalid user role");
-    }
-  }
-
-  async function handleLogin(e: SyntheticEvent<HTMLFormElement>) {
+  async function handleLogin(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
 
     setError("");
-
-    if (!validateForm()) {
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const data = await LoginUser({ email, password });
-
+      const data = await loginUser({ email, password });
       if (data.token && data.user) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("role_id", data.user.role_id.toString());
-        localStorage.setItem("user_id",data.user.id.toString());
 
-        navigateByRole(data.user.role_id);
-      } else {
-        setError("Invalid login response");
+        if (data.user.role_id === 1) {
+          navigate("/admin-dashboard");
+        } else if (data.user.role_id === 2) {
+          navigate("/doctor-dashboard");
+        } else if (data.user.role_id === 3) {
+          navigate("/patient-dashboard");
+        } else if (data.user.role_id === 4) {
+          navigate("/nurse-dashboard");
+        } else {
+          setError("Invalid user role");
+        }
       }
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("Error occurred");
+        setError("Something went wrong");
       }
     } finally {
       setLoading(false);
@@ -108,7 +60,6 @@ function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter email"
-            autoComplete="email"
           />
         </div>
 
@@ -121,7 +72,6 @@ function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter password"
-            autoComplete="current-password"
           />
         </div>
 

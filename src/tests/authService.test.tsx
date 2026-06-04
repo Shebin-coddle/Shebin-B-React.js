@@ -1,4 +1,4 @@
-import { LoginUser } from "../services/AuthService";
+import { loginUser } from "../services/authService";
 import { vi } from "vitest";
 
 beforeEach(() => {
@@ -25,7 +25,7 @@ test("loginUser returns data when login is successful", async () => {
     }),
   );
 
-  const result = await LoginUser({
+  const result = await loginUser({
     email: "admin@gmail.com",
     password: "123456",
   });
@@ -47,7 +47,7 @@ test("loginUser throws error when login fails", async () => {
   );
 
   await expect(
-    LoginUser({
+    loginUser({
       email: "wrong@gmail.com",
       password: "wrong",
     }),
@@ -66,7 +66,7 @@ test("loginUser throws default error when response has no message", async () => 
   );
 
   await expect(
-    LoginUser({
+    loginUser({
       email: "wrong@gmail.com",
       password: "wrong",
     }),
