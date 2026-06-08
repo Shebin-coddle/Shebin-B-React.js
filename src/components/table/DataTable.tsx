@@ -11,20 +11,13 @@ type DataTableProps<T> = {
   rowsPerPage?: number;
 };
 
-function DataTable<T>({
-  columns,
-  data,
-  rowsPerPage = 10,
-}: DataTableProps<T>) {
+function DataTable<T>({ columns, data, rowsPerPage = 10 }: DataTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
 
   const totalPages = Math.ceil(data.length / rowsPerPage);
 
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedData = data.slice(
-    startIndex,
-    startIndex + rowsPerPage
-  );
+  const paginatedData = data.slice(startIndex, startIndex + rowsPerPage);
 
   function goToPage(page: number) {
     if (page >= 1 && page <= totalPages) {
@@ -34,7 +27,7 @@ function DataTable<T>({
 
   return (
     <div>
-      <table className="admin-table">
+      <table className="data-table">
         <thead>
           <tr>
             {columns.map((column) => (
@@ -47,16 +40,13 @@ function DataTable<T>({
           {paginatedData.map((item, index) => (
             <tr key={index}>
               {columns.map((column) => (
-                <td key={column.header}>
-                  {column.render(item)}
-                </td>
+                <td key={column.header}>{column.render(item)}</td>
               ))}
             </tr>
           ))}
         </tbody>
       </table>
 
-    
       <div className="pagination">
         <button
           onClick={() => goToPage(currentPage - 1)}

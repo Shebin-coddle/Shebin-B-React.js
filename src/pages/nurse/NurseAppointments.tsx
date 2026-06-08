@@ -159,7 +159,7 @@ function NurseAppointments() {
             },
             {
               label: "Date",
-              value: selectedAppointment.appointment_date,
+              value: new Date(selectedAppointment.appointment_date).toLocaleDateString("en-IN"),
             },
             {
               label: "Start Time",

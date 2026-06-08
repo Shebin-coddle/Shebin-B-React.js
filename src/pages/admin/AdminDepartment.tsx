@@ -8,6 +8,7 @@ import {
 import type { Department } from "../../types/DepartmentTypes";
 import DeleteModal from "../../components/DeleteModal";
 
+
 function AdminDepartments() {
   const [departments, setDepartments] = useState<Department[]>([]);
   useState<Department | null>(null);
@@ -99,10 +100,17 @@ function AdminDepartments() {
 
   return (
     <section>
-      <h2>Departments</h2>
-      <button onClick={() => navigate("/admin-departments/add")}>
-        Add Department
-      </button>
+     <div className="pages-header">
+        <h2>Departments</h2>
+        <div className="pages-actions">
+          <button
+            className="add-btn"
+            onClick={() => navigate("/admin-departments/add")}
+          >
+            Add department
+          </button>
+        </div>
+      </div>
 
       <DataTable columns={columns} data={departments} />
 

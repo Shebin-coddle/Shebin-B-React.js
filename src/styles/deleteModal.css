@@ -17,16 +17,6 @@
   animation: pop 0.2s ease-in-out;
 }
 
-@keyframes pop {
-  from {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
 
 .modal-actions {
   display: flex;

@@ -3,19 +3,24 @@ import { useNavigate } from "react-router-dom";
 import DataTable from "../../components/table/DataTable";
 import { getAllPatients, removePatient } from "../../services/PatientService";
 import type { Patient } from "../../types/PatientTypes";
-import { getAllUsers } from "../../services/UserService";
 import DeleteModal from "../../components/DeleteModal";
+import "../../styles/pagesHeader.css"
 
-function AdminPatients() {
+  type AdminPatientsProps = {
+  userNameMap: Record<number, string>;
+};
+
+function AdminPatients({
+  userNameMap,
+}: AdminPatientsProps)  {
+
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [userName, setUserName] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
-
   const navigate = useNavigate();
-
+  
   useEffect(() => {
     async function fetchPatients() {
       try {
@@ -35,23 +40,9 @@ function AdminPatients() {
     fetchPatients();
   }, []);
 
-  useEffect(() => {
-    async function fetchUsers() {
-      try {
-        const users = await getAllUsers();
 
-        const map = Object.fromEntries(
-          users.map((u) => [u.id, `${u.first_name} ${u.last_name}`]),
-        );
 
-        setUserName(map);
-      } catch (err) {
-        console.error("Failed to load users", err);
-      }
-    }
-
-    fetchUsers();
-  }, []);
+ 
 
   function openDeleteModal(id: number) {
     setDeleteId(id);
@@ -84,7 +75,7 @@ function AdminPatients() {
     {
       header: "Name",
       render: (patient: Patient) =>
-        userName[patient.user_id] || patient.user_id,
+        userNameMap[patient.user_id] || patient.user_id,
     },
     {
       header: "Date of Birth",
@@ -100,7 +91,7 @@ function AdminPatients() {
       render: (patient: Patient) => (
         <div className="table-actions">
           <button
-            onClick={() => navigate(`/admin-patients/edit/${patient.user_id}`)}
+            onClick={() => navigate(`/admin-users/edit/${patient.user_id}`)}
           >
             Edit
           </button>
@@ -122,18 +113,30 @@ function AdminPatients() {
 
   return (
     <section>
-      <h2>Patients</h2>
-      <DataTable columns={columns} data={patients} />
+  <div className="pages-header">
+    <h2>Patients</h2>
 
-      <DeleteModal
-        open={deleteId !== null}
-        title="Delete Patient"
-        message="Do you want to continue?"
-        loading={deleting}
-        onCancel={() => setDeleteId(null)}
-        onConfirm={confirmDelete}
-      />
-    </section>
+    <div className="pages-actions">
+      <button
+        className="add-btn"
+        onClick={() => navigate("/admin-users/add")}
+      >
+        Add Patient
+      </button>
+    </div>
+  </div>
+
+  <DataTable columns={columns} data={patients} />
+
+  <DeleteModal
+    open={deleteId !== null}
+    title="Delete Patient"
+    message="Do you want to continue?"
+    loading={deleting}
+    onCancel={() => setDeleteId(null)}
+    onConfirm={confirmDelete}
+  />
+</section>
   );
 }
 

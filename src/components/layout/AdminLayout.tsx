@@ -1,10 +1,10 @@
 import Layout from "./Layout";
-import { adminMenu } from "./Menu";
+import { adminMenu } from "../Labels/Menu";
 
 function AdminLayout() {
   return (
     <Layout
-       sidebarTitle="Hospital Admin"
+      sidebarTitle="Hospital Admin"
       topbarTitle="Admin Panel"
       menuItems={adminMenu}
     />

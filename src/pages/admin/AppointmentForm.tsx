@@ -20,6 +20,7 @@ import type {
   CreateAppointmentRequest,
   UpdateAppointmentRequest,
 } from "../../types/AppointmentTypes";
+import { getAllUsers } from "../../services/UserService";
 
 type AppointmentForm = {
   doctor_id: number | "";
@@ -42,13 +43,53 @@ const emptyForm: AppointmentForm = {
 function AppointmentForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-
   const isEdit = Boolean(id);
 
   const [formData, setFormData] = useState<AppointmentForm>(emptyForm);
 
+  const [doctorMap, setDoctorMap] = useState<Record<number, string>>({});
+  const [patientMap, setPatientMap] = useState<Record<number, string>>({});
+
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+
+  useEffect(() => {
+    async function fetchDoctors() {
+      try {
+        const users = await getAllUsers();
+        const doctors = users.filter((u) => u.role_id === 2);
+
+        const map = Object.fromEntries(
+          doctors.map((d) => [d.id, `Dr. ${d.first_name} ${d.last_name}`]),
+        );
+
+        setDoctorMap(map);
+      } catch (err) {
+        console.error("Failed to load doctors", err);
+      }
+    }
+
+    fetchDoctors();
+  }, []);
+
+  useEffect(() => {
+    async function fetchPatients() {
+      try {
+        const users = await getAllUsers();
+        const patients = users.filter((u) => u.role_id === 3);
+
+        const map = Object.fromEntries(
+          patients.map((p) => [p.id, `${p.first_name} ${p.last_name}`]),
+        );
+
+        setPatientMap(map);
+      } catch (err) {
+        console.error("Failed to load patients", err);
+      }
+    }
+
+    fetchPatients();
+  }, []);
 
   useEffect(() => {
     let ignore = false;
@@ -62,19 +103,19 @@ function AppointmentForm() {
       try {
         const response = await getAppointmentById(Number(id));
 
-        const appt: Appointment = Array.isArray(response)
+        const appointment: Appointment = Array.isArray(response)
           ? response[0]
           : response;
 
         if (ignore) return;
 
         setFormData({
-          doctor_id: appt.doctor_id,
-          patient_id: appt.patient_id,
-          appointment_date: appt.appointment_date?.split("T")[0] || "",
-          start_time: appt.start_time || "",
-          end_time: appt.end_time || "",
-          status: appt.status || "booked",
+          doctor_id: appointment.doctor_id,
+          patient_id: appointment.patient_id,
+          appointment_date: appointment.appointment_date?.split("T")[0] || "",
+          start_time: appointment.start_time || "",
+          end_time: appointment.end_time || "",
+          status: appointment.status || "booked",
         });
       } catch (err) {
         if (!ignore) {
@@ -149,15 +190,27 @@ function AppointmentForm() {
       fields={[
         {
           name: "doctor_id",
-          label: "Doctor ID",
-          type: "number",
+          label: "Doctor",
+          type: "select",
           value: formData.doctor_id,
+          options: [
+            { label: "Select Doctor", value: 0 },
+            ...Object.entries(doctorMap).map(([id, name]) => ({
+            value: Number(id),
+            label: name,
+          })),]
         },
         {
           name: "patient_id",
-          label: "Patient ID",
-          type: "number",
+          label: "Patient",
+          type: "select",
           value: formData.patient_id,
+          options: [
+            { label: "Select Doctor", value: 0 },
+            ...Object.entries(patientMap).map(([id, name]) => ({
+            value: Number(id),
+            label: name,
+          })),]
         },
         {
           name: "appointment_date",

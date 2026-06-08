@@ -6,7 +6,8 @@ import DeleteModal from "../../components/DeleteModal";
 
 import { getAllUsers, removeUser } from "../../services/UserService";
 import SearchInput from "../../components/SearchInput";
-import "../../styles/deleteModal.css"
+import "../../styles/deleteModal.css";
+import "../../styles/userHeader.css";
 
 function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
@@ -36,8 +37,6 @@ function AdminUsers() {
 
     fetchUsers();
   }, []);
-
- 
 
   function openDeleteModal(id: number) {
     setDeleteId(id);
@@ -88,14 +87,22 @@ function AdminUsers() {
       render: (user: User) => user.phone || "N/A",
     },
     {
-      header: "Role ID",
-      render: (user: User) => user.role_id,
+      header: "Role",
+      render: (user: User) =>
+        user.role_id === 1
+          ? "Admin"
+          : user.role_id === 2
+            ? "Doctor"
+            : user.role_id === 3
+              ? "Patient"
+              : user.role_id === 4
+                ? "Nurse"
+                : "",
     },
     {
       header: "Actions",
       render: (user: User) => (
         <div className="table-actions">
-
           <button onClick={() => navigate(`/admin-users/edit/${user.id}`)}>
             Edit
           </button>
@@ -116,14 +123,27 @@ function AdminUsers() {
 
   return (
     <section>
-      <h2>Users</h2>
-      <SearchInput
-        value={searchText}
-        onChange={setSearchText}
-        placeholder="Search users by name or email"
-      />
+      <div className="users-header">
+        <h2>Users</h2>
+
+        <div className="users-actions">
+          <SearchInput
+            value={searchText}
+            onChange={setSearchText}
+            placeholder="Search users by name or email"
+          />
+
+          <button
+            className="add-user-btn"
+            onClick={() => navigate("/admin-users/add")}
+          >
+            Add User
+          </button>
+        </div>
+      </div>
+
       <DataTable columns={columns} data={filteredUsers} />
-      
+
       <DeleteModal
         open={deleteId !== null}
         title="Delete User"

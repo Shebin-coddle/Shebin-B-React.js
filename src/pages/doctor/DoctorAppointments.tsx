@@ -17,8 +17,7 @@ import type { MedicalRecord } from "../../types/MedicalRecordTypes";
 function DoctorAppointments() {
   const userId = localStorage.getItem("user_id");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [selectedAppointment, setSelectedAppointment] =
-    useState<Appointment | null>(null);
+
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [selectedPatient, setSelectedPatient] = useState<PatientDetails | null>(
@@ -210,30 +209,7 @@ function DoctorAppointments() {
       </div>
       <DataTable columns={columns} data={filteredAppointments} />
 
-      {selectedAppointment && (
-        <DetailCard
-          title="Selected Appointment Details"
-          details={[
-            {
-              label: "Date",
-              value: selectedAppointment.appointment_date,
-            },
-            {
-              label: "Start Time",
-              value: selectedAppointment.start_time,
-            },
-            {
-              label: "End Time",
-              value: selectedAppointment.end_time,
-            },
-            {
-              label: "Status",
-              value: selectedAppointment.status,
-            },
-          ]}
-          onClose={() => setSelectedAppointment(null)}
-        />
-      )}
+      
       {selectedPatient && (
         <DetailCard
           title="Selected Patient Details"
@@ -252,7 +228,7 @@ function DoctorAppointments() {
             },
             {
               label: "Date of Birth",
-              value: selectedPatient.dob,
+              value: new Date (selectedPatient.dob).toLocaleDateString("en-IN"),
             },
             {
               label: "Blood Group",
@@ -284,7 +260,7 @@ function DoctorAppointments() {
                 </p>
 
                 <p>
-                  <strong>Date:</strong> {record.diagnosis_date}
+                  <strong>Date:</strong> {new Date (record.diagnosis_date).toLocaleDateString("en-IN")}
                 </p>
               </div>
             ))

@@ -1,6 +1,5 @@
 import Layout from "./Layout";
-import { doctorMenu } from "./Menu";
-
+import { doctorMenu } from "../Labels/Menu";
 
 function DoctorLayout() {
   return (
@@ -9,7 +8,6 @@ function DoctorLayout() {
       topbarTitle="Doctor Panel"
       menuItems={doctorMenu}
     />
-    
   );
 }
 

@@ -9,7 +9,7 @@ import PatientDashboard from "./pages/dashboards/PatientDashboard";
 import NotFound from "./pages/PageNotFound";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminDoctors from "./pages/admin/AdminDoctor";
-import AdminPatients from "./pages/admin/AdminPatient";
+import AdminPatients from "./hoc/AdminPatients.withUserMap";
 import AdminNurses from "./pages/admin/AdminNurse";
 import AdminAppointments from "./pages/admin/AdminAppointment";
 import AdminBills from "./pages/admin/AdminBills";
@@ -30,12 +30,14 @@ import DepartmentForm from "./pages/admin/DepartmentForm";
 import MedicineForm from "./pages/admin/MedicineForm";
 import AppointmentForm from "./pages/admin/AppointmentForm";
 import BillForm from "./pages/admin/BillForm";
+import Profile from "./pages/Profile";
+
 import {
   adminMenu,
   doctorMenu,
   nurseMenu,
   patientMenu,
-} from "./components/layout/Menu";
+} from "./components/Labels/Menu";
 
 function App() {
   return (
@@ -55,8 +57,9 @@ function App() {
               />
             }
           >
-            {" "}
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/Admin-profile" element={<Profile />} />
+
             <Route path="/admin-users" element={<AdminUsers />} />
             <Route path="/admin-users/add" element={<UserForm />} />
             <Route path="/admin-users/edit/:id" element={<UserForm />} />
@@ -100,6 +103,7 @@ function App() {
               element={<DepartmentForm />}
             />
           </Route>
+
           <Route
             element={
               <Layout
@@ -109,6 +113,7 @@ function App() {
               />
             }
           >
+            <Route path="/doctor-profile" element={<Profile />} />
             <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
             <Route
               path="/doctor-appointments"
@@ -125,9 +130,11 @@ function App() {
               />
             }
           >
+            <Route path="/nurse-profile" element={<Profile />} />
             <Route path="/nurse-dashboard" element={<NurseDashboard />} />
             <Route path="/nurse-appointments" element={<NurseAppointments />} />
           </Route>
+
           <Route
             element={
               <Layout
@@ -137,6 +144,7 @@ function App() {
               />
             }
           >
+            <Route path="/patient-profile" element={<Profile />} />
             <Route path="/patient-dashboard" element={<PatientDashboard />} />
             <Route
               path="/patient-book-appointment"

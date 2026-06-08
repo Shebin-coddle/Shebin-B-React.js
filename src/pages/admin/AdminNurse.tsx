@@ -5,9 +5,13 @@ import type { Nurse } from "../../types/NurseTypes";
 import { useNavigate } from "react-router-dom";
 import { getAllUsers } from "../../services/UserService";
 import DeleteModal from "../../components/DeleteModal";
+import { getAllDepartments } from "../../services/DepartmentService";
+import type { Department } from "../../types/DepartmentTypes";
 
 function AdminNurses() {
   const [nurses, setNurses] = useState<Nurse[]>([]);
+    const [departments, setDepartments] = useState<Department[]>([]);
+  
   const [userName, setUserName] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
@@ -33,6 +37,19 @@ function AdminNurses() {
 
     fetchNurses();
   }, []);
+
+  useEffect(() => {
+      async function fetchDepartments() {
+        try {
+          const departments = await getAllDepartments();
+  
+          setDepartments(departments);
+        } catch (err) {
+          console.error("failed to load departments", err);
+        }
+      }
+      fetchDepartments();
+    }, []);
 
   useEffect(() => {
     async function fetchUsers() {
@@ -91,15 +108,17 @@ function AdminNurses() {
       render: (nurse: Nurse) => nurse.salary,
     },
     {
-      header: "Department ID",
-      render: (nurse: Nurse) => nurse.department_id,
+      header: "Department",
+      render: (nurse: Nurse) =>
+             departments.find((d) => d.id === nurse.department_id)
+               ?.department_name || "N/A",
     },
     {
       header: "Actions",
       render: (nurse: Nurse) => (
         <div className="table-actions">
           <button
-            onClick={() => navigate(`/admin-nurses/edit/${nurse.user_id}`)}
+            onClick={() => navigate(`/admin-users/edit/${nurse.user_id}`)}
           >
             Edit
           </button>
@@ -119,8 +138,17 @@ function AdminNurses() {
 
   return (
     <section>
-      <h2>Nurses</h2>
-
+      <div className="pages-header">
+        <h2>Nurses</h2>
+        <div className="pages-actions">
+          <button
+            className="add-btn"
+            onClick={() => navigate("/admin-users/add")}
+          >
+            Add nurse
+          </button>
+        </div>
+      </div>
       <DataTable columns={columns} data={nurses} />
       <DeleteModal
         open={deleteId !== null}

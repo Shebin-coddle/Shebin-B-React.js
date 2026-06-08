@@ -1,4 +1,4 @@
-import type { UpdateUserRequest, User,CreateUserRequest } from "../types/UserTypes";
+import type { UpdateUserRequest, User,CompleteUserForm } from "../types/UserTypes";
 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -68,25 +68,140 @@ export async function updateUser(
 
 
 
-export async function createUser(
-  userData: CreateUserRequest
-): Promise<User> {
+
+export async function createCompleteUser(data: CompleteUserForm) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_BASE_URL}/users/add-user`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(userData),
-  });
+  const payload = {
+    first_name: data.first_name,
+    last_name: data.last_name,
+    email: data.email,
+    phone: data.phone,
+    password: data.password,
+    role_id: data.role_id,
 
-  const data = await response.json();
+    address: {
+      street_name: data.street_name,
+      city: data.city,
+      district: data.district,
+      state: data.state,
+      pincode: data.pincode,
+    },
+
+    doctor:
+      data.role_id === 2
+        ? {
+            specialization: data.specialization,
+            salary: data.salary,
+            department_id: data.department_id,
+          }
+        : undefined,
+
+    patient:
+      data.role_id === 3
+        ? {
+            dob: data.dob,
+            blood_group: data.blood_group,
+          }
+        : undefined,
+
+    nurse:
+      data.role_id === 4
+        ? {
+            salary: data.salary,
+            department_id: data.department_id,
+          }
+        : undefined,
+  };
+
+  const response = await fetch(
+    `${API_BASE_URL}/users/create-complete-user`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  const result = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || "Failed to create user");
+    throw new Error(result.message);
   }
 
-  return data.user || data.data || data;
+  return result;
+}
+
+export async function getUserById(id: number) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(
+    `${API_BASE_URL}/users/${id}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch user");
+  }
+
+  return response.json();
+}
+
+
+export async function getCompleteUser(
+  id: number,
+) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(
+    `${API_BASE_URL}/users/complete-details/${id}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to fetch user details",
+    );
+  }
+
+  return response.json();
+}
+
+
+export async function updateCompleteUser(
+  id: number,
+  data: CompleteUserForm,
+) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(
+    `${API_BASE_URL}/users/edit-complete-user/${id}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    },
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.message);
+  }
+
+  return result;
 }

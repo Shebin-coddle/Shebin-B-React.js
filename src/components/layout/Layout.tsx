@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import "../../styles/adminLayout.css";
+import Breadcrumbs from "../BreadCrumps";
 
 
 type MenuItem = {
@@ -28,6 +29,7 @@ function ReusableLayout({
         <Topbar title={topbarTitle} />
 
         <main className="admin-content">
+          <Breadcrumbs/>
           <Outlet />
         </main>
       </div>

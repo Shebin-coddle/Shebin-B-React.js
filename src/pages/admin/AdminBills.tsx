@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { getAllUsers } from "../../services/UserService";
 import DeleteModal from "../../components/DeleteModal";
 
+
 function AdminBills() {
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -20,7 +21,6 @@ function AdminBills() {
     async function fetchBills() {
       try {
         const billData = await getAllBills();
-
         setBills(billData);
       } catch (err) {
         if (err instanceof Error) {
@@ -132,10 +132,17 @@ function AdminBills() {
 
   return (
     <section>
-      <h2>Bills</h2>
-      <button onClick={() => navigate("/admin-bills/add")}>
-        Add bill
-      </button>
+      <div className="pages-header">
+        <h2>Bills</h2>
+        <div className="pages-actions">
+          <button
+            className="add-btn"
+            onClick={() => navigate("/admin-bills/add")}
+          >
+            Add Bill
+          </button>
+        </div>
+      </div>
 
       <DataTable columns={columns} data={bills} />
       <DeleteModal

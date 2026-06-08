@@ -8,6 +8,7 @@ import type { Medicine } from "../../types/MedicineTypes";
 import { useNavigate } from "react-router-dom";
 import DeleteModal from "../../components/DeleteModal";
 
+
 function AdminMedicines() {
   
   const [medicines, setMedicines] = useState<Medicine[]>([]);
@@ -62,14 +63,13 @@ function AdminMedicines() {
 
   const columns = [
     {
-      header: "ID",
+      header: "Batch ID",
       render: (medicine: Medicine) => medicine.id,
     },
     {
       header: "Medicine Name",
       render: (medicine: Medicine) => medicine.medicine_name,
     },
-
     {
       header: "Stock",
       render: (medicine: Medicine) => medicine.stock,
@@ -83,11 +83,9 @@ function AdminMedicines() {
       header: "Actions",
       render: (medicine: Medicine) => (
         <div className="table-actions">
-          <button
-            onClick={() => navigate(`/admin-medicines/edit/${medicine.id}`)}
-          >
-            Edit
-          </button>
+          <button onClick={(
+            
+          ) => navigate(`/admin-medicines/edit/${medicine.id}`)}>Edit</button>
           <button onClick={() => openDeleteModal(medicine.id)}>Delete</button>
         </div>
       ),
@@ -104,10 +102,17 @@ function AdminMedicines() {
 
   return (
     <section>
-      <h2>Medicines</h2>
-      <button onClick={() => navigate("/admin-medicines/add")}>
-        Add medicine
-      </button>{" "}
+      <div className="pages-header">
+        <h2>Medicines</h2>
+        <div className="pages-actions">
+          <button
+            className="add-btn"
+            onClick={() => navigate("/admin-medicines/add")}
+          >
+            Add medicine
+          </button>
+        </div>
+      </div>
       <DataTable columns={columns} data={medicines} />
       <DeleteModal
         open={deleteId !== null}

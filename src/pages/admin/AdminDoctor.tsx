@@ -4,10 +4,14 @@ import DataTable from "../../components/table/DataTable";
 import { getAllDoctors, removeDoctor } from "../../services/DoctorService";
 import type { Doctor } from "../../types/DoctorTypes";
 import { getAllUsers } from "../../services/UserService";
+import type { Department } from "../../types/DepartmentTypes";
+import { getAllDepartments } from "../../services/DepartmentService";
+
 import DeleteModal from "../../components/DeleteModal";
 
 function AdminDoctors() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [userName, setUserName] = useState<Record<number, string>>({});
@@ -50,6 +54,19 @@ function AdminDoctors() {
     }
 
     fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    async function fetchDepartments() {
+      try {
+        const departments = await getAllDepartments();
+
+        setDepartments(departments);
+      } catch (err) {
+        console.error("failed to load departments", err);
+      }
+    }
+    fetchDepartments();
   }, []);
 
   function openDeleteModal(id: number) {
@@ -95,15 +112,17 @@ function AdminDoctors() {
       render: (doctor: Doctor) => doctor.salary,
     },
     {
-      header: "Department ID",
-      render: (doctor: Doctor) => doctor.department_id,
+      header: "Department",
+      render: (doctor: Doctor) =>
+        departments.find((d) => d.id === doctor.department_id)
+          ?.department_name || "N/A",
     },
     {
       header: "Actions",
       render: (doctor: Doctor) => (
         <div className="table-actions">
           <button
-            onClick={() => navigate(`/admin-doctors/edit/${doctor.user_id}`)}
+            onClick={() => navigate(`/admin-users/edit/${doctor.user_id}`)}
           >
             Edit
           </button>
@@ -125,8 +144,17 @@ function AdminDoctors() {
 
   return (
     <section>
-      <h2>Doctors</h2>
-
+      <div className="pages-header">
+        <h2>Doctors</h2>
+        <div className="pages-actions">
+          <button
+            className="add-btn"
+            onClick={() => navigate("/admin-users/add")}
+          >
+            Add doctor
+          </button>
+        </div>
+      </div>
       <DataTable columns={columns} data={doctors} />
 
       <DeleteModal

@@ -8,28 +8,26 @@ import {
 import { getAllDepartments } from "../../services/DepartmentService";
 import { getDoctorsWithDetails } from "../../services/DoctorService";
 import { createAppointment } from "../../services/AppointmentService";
-
 import type { Department } from "../../types/DepartmentTypes";
 import type { DoctorDetails } from "../../types/DoctorTypes";
+import EditForm from "../../components/EditForm";
+import { useNavigate } from "react-router-dom";
 
 function PatientBookAppointment() {
   const patientId = Number(localStorage.getItem("user_id"));
-
   const [departments, setDepartments] = useState<Department[]>([]);
   const [doctors, setDoctors] = useState<DoctorDetails[]>([]);
-
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<number>(0);
   const [selectedDoctorId, setSelectedDoctorId] = useState<number>(0);
-
   const [appointmentDate, setAppointmentDate] = useState<string>("");
   const [startTime, setStartTime] = useState<string>("");
   const [endTime, setEndTime] = useState<string>("");
-
   const [message, setMessage] = useState<string>("");
-  const [error, setError] = useState<string>("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const navigate = useNavigate();
 
   useEffect(() => {
-    async function fetchInitialData() {
+    async function fetchData() {
       try {
         const departmentData = await getAllDepartments();
         const doctorData = await getDoctorsWithDetails();
@@ -37,42 +35,114 @@ function PatientBookAppointment() {
         setDepartments(departmentData);
         setDoctors(doctorData);
       } catch (err) {
-        if (err instanceof Error) setError(err.message);
-        else setError("Error occurred while loading appointment data");
+        if (err instanceof Error) {
+          setErrors({ form: err.message });
+        } else {
+          setErrors({
+            form: "Error occurred while loading appointment data",
+          });
+        }
       }
     }
 
-    fetchInitialData();
+    fetchData();
   }, []);
-
+  
   const filteredDoctors = doctors.filter(
-    (doctor) => doctor.department_id === selectedDepartmentId
+    (doctor) => doctor.department_id === selectedDepartmentId,
   );
 
-  function handleDepartmentChange(e: ChangeEvent<HTMLSelectElement>) {
-    setSelectedDepartmentId(Number(e.target.value));
-    setSelectedDoctorId(0);
-  }
+  const fields = [
+    {
+      name: "department",
+      label: "Department",
+      type: "select" as const,
+      value: selectedDepartmentId,
+      options: [
+        { label: "Select Department", value: 0 },
+        ...departments.map((d) => ({
+          label: d.department_name,
+          value: d.id,
+        })),
+      ],
+    },
+    {
+      name: "doctor",
+      label: "Doctor",
+      type: "select" as const,
+      value: selectedDoctorId,
+      options: [
+        { label: "Select Doctor", value: 0 },
+        ...filteredDoctors.map((doc) => ({
+          label: `Dr. ${doc.first_name} ${doc.last_name} - ${doc.specialization}`,
+          value: doc.user_id,
+        })),
+      ],
+    },
+    {
+      name: "appointmentDate",
+      label: "Appointment Date",
+      type: "date" as const,
+      value: appointmentDate,
+    },
+    {
+      name: "startTime",
+      label: "Start Time",
+      type: "time" as const,
+      value: startTime,
+    },
+    {
+      name: "endTime",
+      label: "End Time",
+      type: "time" as const,
+      value: endTime,
+    },
+  ];
 
   async function handleBookAppointment(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    setError("");
     setMessage("");
 
     const today = new Date().toISOString().slice(0, 10);
 
-    if (!patientId) return setError("Patient ID not found. Please login again.");
-    if (!selectedDepartmentId) return setError("Please select a department");
-    if (!selectedDoctorId) return setError("Please select a doctor");
-    if (!appointmentDate) return setError("Please select appointment date");
-    if (appointmentDate < today)
-      return setError("Appointment date cannot be in the past");
-    if (!startTime) return setError("Please select start time");
-    if (!endTime) return setError("Please select end time");
-    if (startTime >= endTime)
-      return setError("End time must be after start time");
+    const validationErrors: Record<string, string> = {};
 
+    if (!selectedDepartmentId) {
+      validationErrors.department = "Please select a department";
+    }
+
+    if (!selectedDoctorId) {
+      validationErrors.doctor = "Please select a doctor";
+    }
+
+    if (!appointmentDate) {
+      validationErrors.appointmentDate = "Please select appointment date";
+    }
+
+    if (appointmentDate && appointmentDate < today) {
+      validationErrors.appointmentDate =
+        "Appointment date cannot be in the past";
+    }
+
+    if (!startTime) {
+      validationErrors.startTime = "Please select start time";
+    }
+
+    if (!endTime) {
+      validationErrors.endTime = "Please select end time";
+    }
+
+    if (startTime && endTime && startTime >= endTime) {
+      validationErrors.endTime = "End time must be after start time";
+    }
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setErrors({});
     try {
       await createAppointment({
         doctor_id: selectedDoctorId,
@@ -91,8 +161,39 @@ function PatientBookAppointment() {
       setStartTime("");
       setEndTime("");
     } catch (err) {
-      if (err instanceof Error) setError(err.message);
-      else setError("Error occurred while booking appointment");
+      if (err instanceof Error) {
+        setErrors({ form: err.message });
+      } else {
+        setErrors({ form: "Error occurred while booking appointment" });
+      }
+    }
+  }
+  function handleFieldChange(
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  ) {
+    const { name, value } = e.target;
+
+    switch (name) {
+      case "department":
+        setSelectedDepartmentId(Number(value));
+        setSelectedDoctorId(0);
+        break;
+
+      case "doctor":
+        setSelectedDoctorId(Number(value));
+        break;
+
+      case "appointmentDate":
+        setAppointmentDate(value);
+        break;
+
+      case "startTime":
+        setStartTime(value);
+        break;
+
+      case "endTime":
+        setEndTime(value);
+        break;
     }
   }
 
@@ -101,64 +202,16 @@ function PatientBookAppointment() {
       <h2>Book Appointment</h2>
 
       {message && <p className="success">{message}</p>}
-      {error && <p className="error">{error}</p>}
+      {errors.form && <p className="error">{errors.form}</p>}
 
-      <form className="edit-user-form" onSubmit={handleBookAppointment}>
-      
-        <select
-          data-testid="department-select"
-          value={selectedDepartmentId}
-          onChange={handleDepartmentChange}
-        >
-          <option value={0}>Select Department</option>
-
-          {departments.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.department_name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          data-testid="doctor-select"
-          value={selectedDoctorId}
-          onChange={(e) => setSelectedDoctorId(Number(e.target.value))}
-          disabled={!selectedDepartmentId}
-        >
-          <option value={0}>Select Doctor</option>
-
-          {filteredDoctors.map((doc) => (
-            <option key={doc.user_id} value={doc.user_id}>
-              Dr. {doc.first_name} {doc.last_name} - {doc.specialization}
-            </option>
-          ))}
-        </select>
-
-      
-        <input
-          data-testid="appointment-date"
-          type="date"
-          value={appointmentDate}
-          onChange={(e) => setAppointmentDate(e.target.value)}
-        />
-
-   
-        <input
-          data-testid="start-time"
-          type="time"
-          value={startTime}
-          onChange={(e) => setStartTime(e.target.value)}
-        />
-
-        <input
-          data-testid="end-time"
-          type="time"
-          value={endTime}
-          onChange={(e) => setEndTime(e.target.value)}
-        />
-
-        <button type="submit">Book Appointment</button>
-      </form>
+      <EditForm
+        title="Book Appointment"
+        fields={fields}
+        errors={errors}
+        onChange={handleFieldChange}
+        onSubmit={handleBookAppointment}
+        onCancel={() => navigate("/patient-dashboard")}
+      />
     </section>
   );
 }

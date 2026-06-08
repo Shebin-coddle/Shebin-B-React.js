@@ -1,11 +1,11 @@
 import Layout from "./Layout";
-import { patientMenu } from "./Menu";
+import { patientMenu } from "../Labels/Menu";
 import "../../styles/adminLayout.css";
 
 function PatientLayout() {
   return (
     <Layout
-       sidebarTitle="Patient Portal"
+      sidebarTitle="Patient Portal"
       topbarTitle="Patient Panel"
       menuItems={patientMenu}
     />

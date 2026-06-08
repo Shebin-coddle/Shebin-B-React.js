@@ -12,16 +12,12 @@ type SidebarProps = {
 
 function Sidebar({ title, items }: SidebarProps) {
   return (
-    <aside className="admin-sidebar">
-      <h2 className="admin-logo">{title}</h2>
+    <aside className="sidebar">
+      <h2 className="logo">{title}</h2>
 
-      <nav className="admin-menu">
+      <nav className="menu">
         {items.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className="admin-menu-link"
-          >
+          <NavLink key={item.path} to={item.path} className="menu-link">
             {item.label}
           </NavLink>
         ))}

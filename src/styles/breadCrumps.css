@@ -1,0 +1,32 @@
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.breadcrumbs a {
+  text-decoration: none;
+  color: #0b9fb8;
+  transition: color 0.2s ease;
+  font-weight: 600;
+  font-size: 15px;
+
+}
+
+.breadcrumbs a:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.breadcrumbs span {
+  color: #6b7280;
+}
+
+.breadcrumb-current {
+  color: #374151;
+  font-weight: 600;
+}

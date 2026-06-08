@@ -9,6 +9,7 @@ import type { Appointment } from "../../types/AppointmentTypes";
 import { getAllUsers } from "../../services/UserService";
 import DeleteModal from "../../components/DeleteModal";
 
+
 function AdminAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   useState<Appointment | null>(null);
@@ -37,13 +38,14 @@ function AdminAppointments() {
     fetchAppointments();
   }, []);
 
+
   useEffect(() => {
     async function fetchUsers() {
       try {
         const users = await getAllUsers();
 
         const map = Object.fromEntries(
-          users.map((u) => [u.id, `Dr.${u.first_name} ${u.last_name}`]),
+          users.map((u) => [u.id, `${u.first_name} ${u.last_name}`]),
         );
         setUserName(map);
       } catch (err) {
@@ -53,6 +55,7 @@ function AdminAppointments() {
     fetchUsers();
   }, []);
 
+  
   function openDeleteModal(id: number) {
     setDeleteId(id);
   }
@@ -86,7 +89,7 @@ function AdminAppointments() {
 
     {
       header: "Doctor",
-      render: (a: Appointment) => userName[a.doctor_id] || a.doctor_id,
+      render: (a: Appointment) => `Dr.${userName[a.doctor_id] || a.doctor_id}`,
     },
     {
       header: "Patient",
@@ -144,10 +147,17 @@ function AdminAppointments() {
 
   return (
     <section>
-      <h2>Appointments</h2>
-      <button onClick={() => navigate("/admin-appointments/add")}>
-        Add appointment
-      </button>
+      <div className="pages-header">
+        <h2>Appointments</h2>
+        <div className="pages-actions">
+          <button
+            className="add-btn"
+            onClick={() => navigate("/admin-appointments/add")}
+          >
+            Add appointment
+          </button>
+        </div>
+      </div>
       <DataTable columns={columns} data={appointments} />
       <DeleteModal
         open={deleteId !== null}

@@ -1,11 +1,10 @@
-
 import Layout from "./Layout";
-import { nurseMenu } from "./Menu";
+import { nurseMenu } from "../Labels/Menu";
 
 function NurseLayout() {
   return (
     <Layout
-       sidebarTitle="Nurse Portal"
+      sidebarTitle="Nurse Portal"
       topbarTitle="Nurse Panel"
       menuItems={nurseMenu}
     />
