@@ -124,10 +124,12 @@ function UserForm() {
       newErrors.last_name = "Last name is required";
     }
 
+   
+
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (
-      !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)
+      !/^[a-zA-Z0-9]+([._%+-][a-zA-Z0-9]+)*@[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*(\.[a-zA-Z]{2,})+$/i.test(formData.email)
     ) {
       newErrors.email = "Invalid email";
     }
