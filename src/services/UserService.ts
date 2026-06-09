@@ -115,7 +115,7 @@ export async function createCompleteUser(data: CompleteUserForm) {
   };
 
   const response = await fetch(
-    `${API_BASE_URL}/users/create-complete-user`,
+    `${API_BASE_URL}/users/add-complete-user`,
     {
       method: "POST",
       headers: {

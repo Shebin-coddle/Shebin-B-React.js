@@ -2,6 +2,9 @@ import { useState, type SyntheticEvent} from "react";
 import { useNavigate } from "react-router-dom";
 import { LoginUser } from "../services/AuthService";
 import "../styles/Login.css";
+import "../components/Home/NavBar"
+import Navbar from "../components/Home/NavBar";
+import { showSuccess,showError } from "../utils/toast";
 
 function Login() {
   const navigate = useNavigate();
@@ -79,11 +82,14 @@ function Login() {
         localStorage.setItem("role_id", data.user.role_id.toString());
         localStorage.setItem("user_id",data.user.id.toString());
 
+        showSuccess("Login Successfull");
+
         navigateByRole(data.user.role_id);
       } else {
         setError("Invalid login response");
       }
     } catch (err) {
+      showError("Login Unsuccessfull");
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -95,6 +101,8 @@ function Login() {
   }
 
   return (
+    <section>
+    <Navbar/>
     <div className="login-container">
       <h1>Login</h1>
 
@@ -127,11 +135,12 @@ function Login() {
 
         {error && <p className="error">{error}</p>}
 
-        <button type="submit" disabled={loading}>
+        <button type="submit"  disabled={loading}>
           {loading ? "Logging in..." : "Login"}
         </button>
       </form>
     </div>
+    </section>
   );
 }
 

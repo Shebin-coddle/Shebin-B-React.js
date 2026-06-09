@@ -21,6 +21,7 @@ import type {
   UpdateAppointmentRequest,
 } from "../../types/AppointmentTypes";
 import { getAllUsers } from "../../services/UserService";
+import { showSuccess,showError } from "../../utils/toast";
 
 type AppointmentForm = {
   doctor_id: number | "";
@@ -173,10 +174,13 @@ function AppointmentForm() {
         };
 
         await createAppointment(createPayload);
+        showSuccess("Appointment created successfully");
       }
 
       navigate("/admin-appointments");
     } catch (error) {
+      showError("Appointment not created");
+
       setError(error instanceof Error ? error.message : "Error saving data");
     }
   }
@@ -196,9 +200,10 @@ function AppointmentForm() {
           options: [
             { label: "Select Doctor", value: 0 },
             ...Object.entries(doctorMap).map(([id, name]) => ({
-            value: Number(id),
-            label: name,
-          })),]
+              value: Number(id),
+              label: name,
+            })),
+          ],
         },
         {
           name: "patient_id",
@@ -208,9 +213,10 @@ function AppointmentForm() {
           options: [
             { label: "Select Doctor", value: 0 },
             ...Object.entries(patientMap).map(([id, name]) => ({
-            value: Number(id),
-            label: name,
-          })),]
+              value: Number(id),
+              label: name,
+            })),
+          ],
         },
         {
           name: "appointment_date",

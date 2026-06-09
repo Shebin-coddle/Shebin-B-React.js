@@ -49,6 +49,7 @@ function NurseDashboard() {
 
   return (
     <section>
+      <h2>Overview</h2>
       <div className="dashboard-card-grid">
         <DashboardCard
           title="Department"

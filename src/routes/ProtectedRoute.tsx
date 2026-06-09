@@ -13,14 +13,16 @@ function ProtectedRoute() {
   const location = useLocation();
 
   if (!token) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
+
 
   const requiredRole = allowedRoles[location.pathname];
 
   if (requiredRole && roleId !== requiredRole) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
+  
 
   return <Outlet />;
 }

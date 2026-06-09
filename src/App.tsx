@@ -31,7 +31,9 @@ import MedicineForm from "./pages/admin/MedicineForm";
 import AppointmentForm from "./pages/admin/AppointmentForm";
 import BillForm from "./pages/admin/BillForm";
 import Profile from "./pages/Profile";
-
+import Home from "./pages/Home";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   adminMenu,
   doctorMenu,
@@ -44,7 +46,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<PublicRoute />}>
-          <Route path="/" element={<Login />} />
+          <Route path="/login" element={<Login />} />
         </Route>
 
         <Route element={<ProtectedRoute />}>
@@ -59,7 +61,6 @@ function App() {
           >
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/Admin-profile" element={<Profile />} />
-
             <Route path="/admin-users" element={<AdminUsers />} />
             <Route path="/admin-users/add" element={<UserForm />} />
             <Route path="/admin-users/edit/:id" element={<UserForm />} />
@@ -134,7 +135,6 @@ function App() {
             <Route path="/nurse-dashboard" element={<NurseDashboard />} />
             <Route path="/nurse-appointments" element={<NurseAppointments />} />
           </Route>
-
           <Route
             element={
               <Layout
@@ -161,8 +161,11 @@ function App() {
             />
           </Route>
         </Route>
+        <Route path="/" element={<Home />} />
         <Route path="*" element={<NotFound />} />
+       
       </Routes>
+       <ToastContainer />
     </BrowserRouter>
   );
 }

@@ -66,7 +66,7 @@ function PatientDashboard() {
 
   return (
     <section>
-      <h2>Patient Dashboard</h2>
+       <h2>Overview</h2>
 
       <div className="dashboard-card-grid">
         <DashboardCard title="My Appointments" count={appointments.length} />

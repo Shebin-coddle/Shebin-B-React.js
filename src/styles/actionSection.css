@@ -1,0 +1,110 @@
+.action-section {
+  padding: 100px 20px;
+
+  background: rgb(244, 244, 244);
+
+
+  text-align: center;
+  color: rgb(0, 0, 0);
+}
+
+.action-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.action-tag {
+  display: inline-block;
+  padding: 8px 18px;
+  background: #dbeafe;
+  color: #2563eb;
+  border-radius: 30px;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.action-content h2 {
+  font-size: 3rem;
+  line-height: 1.2;
+  margin-bottom: 20px;
+}
+
+.action-content h2 span {
+  color: #698bb4;
+}
+
+.action-content p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+
+  max-width: 650px;
+  margin: 0 auto 35px;
+
+  opacity: 0.95;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.action-primary-btn {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 10px;
+  border: 2px solid rgb(0, 0, 0);
+  background: white;
+  color: #2563eb;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.action-primary-btn:hover {
+  transform: translateY(-3px);
+}
+
+.action-secondary-btn {
+  padding: 14px 28px;
+  border: 2px solid rgb(0, 0, 0);
+  border-radius: 10px;
+  background: transparent;
+  color: rgb(0, 0, 0);
+  font-size: 1rem;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.action-secondary-btn:hover {
+  background: white;
+  color: #2563eb;
+}
+
+
+@media (max-width: 768px) {
+  .action-section {
+    padding: 70px 20px;
+  }
+
+  .action-content h2 {
+    font-size: 2rem;
+  }
+
+  .action-content p {
+    font-size: 1rem;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .action-primary-btn,
+  .action-secondary-btn {
+    width: 220px;
+  }
+}

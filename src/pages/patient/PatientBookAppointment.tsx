@@ -12,6 +12,7 @@ import type { Department } from "../../types/DepartmentTypes";
 import type { DoctorDetails } from "../../types/DoctorTypes";
 import EditForm from "../../components/EditForm";
 import { useNavigate } from "react-router-dom";
+import { showSuccess, showError } from "../../utils/toast";
 
 function PatientBookAppointment() {
   const patientId = Number(localStorage.getItem("user_id"));
@@ -47,7 +48,7 @@ function PatientBookAppointment() {
 
     fetchData();
   }, []);
-  
+
   const filteredDoctors = doctors.filter(
     (doctor) => doctor.department_id === selectedDepartmentId,
   );
@@ -153,7 +154,7 @@ function PatientBookAppointment() {
         status: "pending",
       });
 
-      setMessage("Appointment request submitted successfully");
+      showSuccess("Appointment request submitted successfully");
 
       setSelectedDepartmentId(0);
       setSelectedDoctorId(0);
@@ -161,6 +162,7 @@ function PatientBookAppointment() {
       setStartTime("");
       setEndTime("");
     } catch (err) {
+      showError("Appointment not submitted");
       if (err instanceof Error) {
         setErrors({ form: err.message });
       } else {
