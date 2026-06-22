@@ -1,0 +1,117 @@
+.doctor-booking-page {
+  padding: 40px;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.page-header h1 {
+  margin-bottom: 12px;
+  color: #1f2937;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+}
+
+.page-header p {
+  color: #6b7280;
+  font-size: clamp(0.95rem, 2vw, 1.1rem);
+}
+
+.doctor-filters {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+}
+
+.doctor-filters input,
+.doctor-filters select {
+  flex: 1;
+  min-width: 220px;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+}
+
+.doctor-grid {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 25px;
+}
+
+.doctor-card {
+  background: rgb(103 176 255 / 9%);
+  padding: 30px;
+  border-radius: 16px;
+  text-align: center;
+  transition: 0.3s;
+}
+
+.doctor-card h3 {
+  margin-bottom: 10px;
+  color: #1f2937;
+  font-size: 1.3rem;
+}
+
+.specialization {
+  color: #2563eb;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.doctor-card p {
+  margin: 10px 0;
+  color: #4b5563;
+}
+
+.doctor-card button {
+  margin-top: 25px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 20px;
+  background: #94b7e981;
+  color: black;
+  cursor: pointer;
+  font-weight: 700;
+  transition: 0.3s;
+}
+
+.doctor-card button:hover {
+  background: #01195c;
+  color: white;
+}
+
+.no-data {
+  text-align: center;
+  margin-top: 40px;
+  color: #6b7280;
+}
+
+.error {
+  color: red;
+}
+
+@media (max-width: 768px) {
+  .doctor-booking-page {
+    padding: 20px;
+  }
+
+  .doctor-filters {
+    flex-direction: column;
+  }
+
+  .doctor-filters input,
+  .doctor-filters select,
+  .doctor-card button {
+    width: 100%;
+  }
+
+  .doctor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .doctor-card {
+    padding: 24px 20px;
+  }
+}

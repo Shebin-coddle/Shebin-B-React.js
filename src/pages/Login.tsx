@@ -1,13 +1,17 @@
-import { useState, type SyntheticEvent} from "react";
+import { useState, type SyntheticEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { LoginUser } from "../services/AuthService";
 import "../styles/Login.css";
-import "../components/Home/NavBar"
+import "../components/Home/NavBar";
 import Navbar from "../components/Home/NavBar";
-import { showSuccess,showError } from "../utils/toast";
+import { showSuccess, showError } from "../utils/toast";
+import { login } from "../redux/authSlice";
+import { useDispatch } from "react-redux";
+import Footer from "../components/Home/Footer";
 
 function Login() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -25,7 +29,8 @@ function Login() {
       return false;
     }
 
-    const emailPattern =  /^[a-zA-Z0-9]+([._%+-][a-zA-Z0-9]+)*@[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*(\.[a-zA-Z]{2,})+$/;
+    const emailPattern =
+      /^[a-zA-Z0-9]+([._%+-][a-zA-Z0-9]+)*@[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*(\.[a-zA-Z]{2,})+$/;
 
     if (!emailPattern.test(email)) {
       setError("Enter a valid email address");
@@ -80,8 +85,15 @@ function Login() {
       if (data.token && data.user) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("role_id", data.user.role_id.toString());
-        localStorage.setItem("user_id",data.user.id.toString());
+        localStorage.setItem("user_id", data.user.id.toString());
 
+        dispatch(
+          login({
+            token: data.token,
+            userId: data.user.id,
+            roleId: data.user.role_id,
+          }),
+        );
         showSuccess("Login Successfull");
 
         navigateByRole(data.user.role_id);
@@ -101,46 +113,55 @@ function Login() {
   }
 
   return (
-    <section>
-    <Navbar/>
-    <div className="login-container">
-      <h1>Login</h1>
+    <div className="login-division">
+      <section>
+        <Navbar />
+        <div className="login-container">
+          <h1>Login</h1>
 
-      <form onSubmit={handleLogin}>
-        <div>
-          <label htmlFor="email">Email</label>
+          <form onSubmit={handleLogin}>
+            <div>
+              <label htmlFor="email">Email</label>
 
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter email"
-            autoComplete="email"
-          />
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter email"
+                autoComplete="email"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password">Password</label>
+
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                autoComplete="current-password"
+              />
+            </div>
+
+            {error && <p className="error">{error}</p>}
+
+            <button type="submit" disabled={loading}>
+              {loading ? "Logging in..." : "Login"}
+            </button>
+            <p className="register-link">
+              New user?{" "}
+              <span onClick={() => navigate("/patient-registration")}>
+                Register
+              </span>
+            </p>
+          </form>
         </div>
-
-        <div>
-          <label htmlFor="password">Password</label>
-
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter password"
-            autoComplete="current-password"
-          />
-        </div>
-
-        {error && <p className="error">{error}</p>}
-
-        <button type="submit"  disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
+      </section>
+      <Footer />
     </div>
-    </section>
   );
 }
 

@@ -4,7 +4,7 @@ import {
   type ChangeEvent,
   type SyntheticEvent,
 } from "react";
-
+import { useLocation } from "react-router-dom";
 import { getAllDepartments } from "../../services/DepartmentService";
 import { getDoctorsWithDetails } from "../../services/DoctorService";
 import { createAppointment } from "../../services/AppointmentService";
@@ -26,18 +26,36 @@ function PatientBookAppointment() {
   const [message, setMessage] = useState<string>("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     async function fetchData() {
       try {
         const departmentData = await getAllDepartments();
+
         const doctorData = await getDoctorsWithDetails();
 
         setDepartments(departmentData);
         setDoctors(doctorData);
+
+        const params = new URLSearchParams(location.search);
+
+        const doctorId = Number(params.get("doctorId"));
+
+        if (doctorId) {
+          setSelectedDoctorId(doctorId);
+
+          const selectedDoctor = doctorData.find((d) => d.user_id === doctorId);
+
+          if (selectedDoctor) {
+            setSelectedDepartmentId(selectedDoctor.department_id);
+          }
+        }
       } catch (err) {
         if (err instanceof Error) {
-          setErrors({ form: err.message });
+          setErrors({
+            form: err.message,
+          });
         } else {
           setErrors({
             form: "Error occurred while loading appointment data",
@@ -47,7 +65,7 @@ function PatientBookAppointment() {
     }
 
     fetchData();
-  }, []);
+  }, [location.search]);
 
   const filteredDoctors = doctors.filter(
     (doctor) => doctor.department_id === selectedDepartmentId,
@@ -212,7 +230,7 @@ function PatientBookAppointment() {
         errors={errors}
         onChange={handleFieldChange}
         onSubmit={handleBookAppointment}
-        onCancel={() => navigate("/patient-dashboard")}
+        onCancel={() => navigate("/doctor-list")}
       />
     </section>
   );

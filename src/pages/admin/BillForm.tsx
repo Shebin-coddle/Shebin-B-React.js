@@ -11,17 +11,21 @@ import {
   updateBill,
   getBillById,
 } from "../../services/BillService";
-import type { UpdateBillRequest } from "../../types/BillTypes";
+import type { UpdateBillRequest,CreateBillRequest } from "../../types/BillTypes";
+import { showSuccess, showError } from "../../utils/toast";
+import { getAllUsers } from "../../services/UserService";
+import type { User } from "../../types/UserTypes";
 
 type BillForm = {
+  patient_id: number | "";
   amount: number | "";
   date: string;
   description: string;
   status: string;
   mode_of_payment: string;
 };
-
 const emptyForm: BillForm = {
+  patient_id: "",
   amount: "",
   date: "",
   description: "",
@@ -36,6 +40,16 @@ function BillForm() {
   const [formData, setFormData] = useState<BillForm>(emptyForm);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    async function loadUsers() {
+      const res = await getAllUsers();
+      setUsers(res);
+    }
+
+    loadUsers();
+  }, []);
 
   useEffect(() => {
     let ignore = false;
@@ -51,6 +65,7 @@ function BillForm() {
 
         if (ignore) return;
         setFormData({
+          patient_id: bill.patient_id ?? "",
           amount: bill.amount,
           date: bill.date.split("T")[0],
           description: bill.description,
@@ -73,27 +88,37 @@ function BillForm() {
     };
   }, [id, isEdit]);
 
+const patients = users.filter((u) => u.role_id === 3);
+
+
   function handleChange(
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
-  ) {
-    const { name, value } = e.target;
+  e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
+) {
+  const { name, value } = e.target;
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "amount" ? Number(value) : value,
-    }));
-  }
-
+  setFormData((prev) => ({
+    ...prev,
+    [name]:
+      name === "amount" || name === "patient_id"
+        ? value === ""
+          ? ""
+          : Number(value)
+        : value,
+  }));
+}
   async function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     try {
       if (isEdit) {
         await updateBill(Number(id), formData as UpdateBillRequest);
+        showSuccess("Details Updated");
       } else {
-        await createBill(formData as UpdateBillRequest);
+        await createBill(formData as CreateBillRequest);
+        showSuccess("Bill added successfully");
       }
       navigate("/admin-bills");
     } catch (err) {
+      showError("Operation Unsuccessfull");
       setError(err instanceof Error ? err.message : "Error saving bill");
     }
   }
@@ -106,6 +131,16 @@ function BillForm() {
       <EditForm
         title={isEdit ? "Edit Bill" : "Add Bill"}
         fields={[
+          {
+            name: "patient_id",
+            label: "Patient",
+            type: "select",
+            value: formData.patient_id,
+            options: patients.map((u) => ({
+              label: `${u.first_name} ${u.last_name}`,
+              value: u.id,
+            })),
+          },
           {
             name: "amount",
             label: "Amount",

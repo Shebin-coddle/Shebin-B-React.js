@@ -163,6 +163,7 @@ function AppointmentForm() {
         };
 
         await updateAppointment(Number(id), updatePayload);
+        showSuccess("Details Updated")
       } else {
         const createPayload: CreateAppointmentRequest = {
           doctor_id: Number(formData.doctor_id),

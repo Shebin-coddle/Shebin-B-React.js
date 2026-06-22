@@ -1,77 +1,35 @@
-import type { UpdateUserRequest, User,CompleteUserForm } from "../types/UserTypes";
+import type {
+  UpdateUserRequest,
+  User,
+  CompleteUserForm,
+} from "../types/UserTypes";
 
-
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+import api from "./api";
 
 export async function getAllUsers(): Promise<User[]> {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(`${API_BASE_URL}/users/get-allusers`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to fetch users");
-  }
-
-  return data.users || data.data || data;
+  const response = await api.get(`/users/get-allusers`);
+  return response.data.users || response.data.data || response.data;
 }
 
 export const removeUser = async (id: number) => {
-  const token = localStorage.getItem("token");
+  const response = await api.delete(`/users/remove-user/${id}`);
 
-  const response = await fetch(`http://localhost:3000/users/remove-user/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to delete user");
-  }
-
-  return data;
+  return response.data;
 };
-
 
 export async function updateUser(
   id: number,
-  userData: UpdateUserRequest
+  userData: UpdateUserRequest,
 ): Promise<User> {
-  const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_BASE_URL}/users/edit-user/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(userData),
-  });
+  const response = await api.put(`/users/edit-user/${id}`, userData);
 
-  const data = await response.json();
+  
 
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to update user");
-  }
-
-  return data.user || data.data || data;
+  return response.data.user || response.data.data || response.data;
 }
 
-
-
-
 export async function createCompleteUser(data: CompleteUserForm) {
-  const token = localStorage.getItem("token");
-
   const payload = {
     first_name: data.first_name,
     last_name: data.last_name,
@@ -114,94 +72,32 @@ export async function createCompleteUser(data: CompleteUserForm) {
         : undefined,
   };
 
-  const response = await fetch(
-    `${API_BASE_URL}/users/add-complete-user`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    },
+  const { data: result } = await api.post(
+    "/users/add-complete-user",
+    payload,
   );
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.message);
-  }
 
   return result;
 }
 
 export async function getUserById(id: number) {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(
-    `${API_BASE_URL}/users/${id}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch user");
-  }
-
-  return response.json();
+  const { data } = await api.get(`/users/${id}`);
+  return data;
 }
 
-
-export async function getCompleteUser(
-  id: number,
-) {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(
-    `${API_BASE_URL}/users/complete-details/${id}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      "Failed to fetch user details",
-    );
-  }
-
-  return response.json();
+export async function getCompleteUser(id: number) {
+  const { data } = await api.get(`/users/complete-details/${id}`);
+  return data;
 }
-
 
 export async function updateCompleteUser(
   id: number,
   data: CompleteUserForm,
 ) {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(
-    `${API_BASE_URL}/users/edit-complete-user/${id}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(data),
-    },
+  const { data: result } = await api.put(
+    `/users/edit-complete-user/${id}`,
+    data,
   );
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.message);
-  }
 
   return result;
 }

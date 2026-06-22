@@ -1,120 +1,32 @@
-import type {
-  Bill,
-  UpdateBillRequest,
-} from "../types/BillTypes";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL;
+import type { Bill, UpdateBillRequest,CreateBillRequest } from "../types/BillTypes";
+import api from "./api";
 
 export async function getAllBills(): Promise<Bill[]> {
-  const token = localStorage.getItem("token");
+  const response = await api.get(`/bill/get-allbills`);
 
-  const response = await fetch(
-    `${API_BASE_URL}/bill/get-allbills`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message || "Failed to fetch bills",
-    );
-  }
-
-  return data.bills || data.data || data;
+  return response.data.bills || response.data.data || response.data;
 }
 
 export async function updateBill(
   id: number,
   billData: UpdateBillRequest,
 ): Promise<void> {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(
-    `${API_BASE_URL}/bill/edit-bill/${id}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(billData),
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message || "Failed to update bill",
-    );
-  }
+  await api.put(`/bill/edit-bill/${id}`, billData);
 }
 
 export async function getBillById(id: number): Promise<Bill> {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(
-    `${API_BASE_URL}/bill/get-bill/${id}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to fetch bill");
-  }
-
-  return data.bill || data.data || data;
+  const response = await api.get(`/bill/get-bill/${id}`);
+  return response.data.bill || response.data.data || response.data;
 }
 
-export async function createBill(
-  billData: UpdateBillRequest,
-): Promise<void> {
-  const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_BASE_URL}/bill/add-bill`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(billData),
-  });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to create bill");
-  }
+export async function createBill(billData: CreateBillRequest): Promise<void> {
+  await api.post(`/bill/add-bill`, billData);
 }
 
 export const removeBill = async (id: number) => {
-  const token = localStorage.getItem("token");
+  const response = await api.delete(`/bill/remove-bill/${id}`);
 
-  const response = await fetch(`http://localhost:3000/bill/remove-bill/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to delete bill");
-  }
-
-  return data;
+  return response.data;
 };

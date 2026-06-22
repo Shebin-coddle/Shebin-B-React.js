@@ -16,14 +16,12 @@ function ProtectedRoute() {
     return <Navigate to="/login" replace />;
   }
 
-
   const requiredRole = allowedRoles[location.pathname];
 
   if (requiredRole && roleId !== requiredRole) {
     return <Navigate to="/login" replace />;
   }
   
-
   return <Outlet />;
 }
 

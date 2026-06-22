@@ -15,6 +15,7 @@ function Topbar({ title }: TopbarProps) {
 
     navigate("/", { replace: true });
   }
+
   
   function handleProfile() {
   const roleId = Number(localStorage.getItem("role_id"));

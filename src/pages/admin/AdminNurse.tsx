@@ -7,17 +7,18 @@ import { getAllUsers } from "../../services/UserService";
 import DeleteModal from "../../components/DeleteModal";
 import { getAllDepartments } from "../../services/DepartmentService";
 import type { Department } from "../../types/DepartmentTypes";
+import SearchInput from "../../components/SearchInput";
 
 function AdminNurses() {
   const [nurses, setNurses] = useState<Nurse[]>([]);
-    const [departments, setDepartments] = useState<Department[]>([]);
-  
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [userName, setUserName] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const navigate = useNavigate();
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [searchText, setSearchText] = useState<string>("");
 
   useEffect(() => {
     async function fetchNurses() {
@@ -39,17 +40,17 @@ function AdminNurses() {
   }, []);
 
   useEffect(() => {
-      async function fetchDepartments() {
-        try {
-          const departments = await getAllDepartments();
-  
-          setDepartments(departments);
-        } catch (err) {
-          console.error("failed to load departments", err);
-        }
+    async function fetchDepartments() {
+      try {
+        const departments = await getAllDepartments();
+
+        setDepartments(departments);
+      } catch (err) {
+        console.error("failed to load departments", err);
       }
-      fetchDepartments();
-    }, []);
+    }
+    fetchDepartments();
+  }, []);
 
   useEffect(() => {
     async function fetchUsers() {
@@ -92,6 +93,12 @@ function AdminNurses() {
     }
   }
 
+ const filteredNurses = nurses.filter((nurse) => {
+  const name = (userName[nurse.user_id] || "").toLowerCase();
+
+  return name.includes(searchText.toLowerCase());
+});
+
   const columns = [
     {
       header: "User ID",
@@ -110,8 +117,8 @@ function AdminNurses() {
     {
       header: "Department",
       render: (nurse: Nurse) =>
-             departments.find((d) => d.id === nurse.department_id)
-               ?.department_name || "N/A",
+        departments.find((d) => d.id === nurse.department_id)
+          ?.department_name || "N/A",
     },
     {
       header: "Actions",
@@ -138,9 +145,14 @@ function AdminNurses() {
 
   return (
     <section>
-      <div className="pages-header">
+      <div className="user-header">
         <h2>Nurses</h2>
-        <div className="pages-actions">
+        <div className="users-actions">
+          <SearchInput
+            value={searchText}
+            onChange={setSearchText}
+            placeholder="Search users by name"
+          />
           <button
             className="add-btn"
             onClick={() => navigate("/admin-users/add")}
@@ -149,7 +161,7 @@ function AdminNurses() {
           </button>
         </div>
       </div>
-      <DataTable columns={columns} data={nurses} />
+      <DataTable columns={columns} data={filteredNurses} />
       <DeleteModal
         open={deleteId !== null}
         title="Delete Patient"

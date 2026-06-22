@@ -1,83 +1,23 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL;
-import type { CreateAddressRequest,Address } from "../types/AddressTypes";
-
+import api from "./api";
+import type { CreateAddressRequest, Address } from "../types/AddressTypes";
 
 export async function createAddress(
   addressData: CreateAddressRequest,
 ): Promise<Address> {
-  const token = localStorage.getItem("token");
+  const response = await api.post<Address>(`/address/add-address`, addressData);
 
-  const response = await fetch(
-    `${API_BASE_URL}/address/add-address`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(addressData),
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message || "Failed to create address",
-    );
-  }
-
-  return data.address || data.data || data;
+  return response.data;
 }
 
-export async function getAddressById(
-  id: number,
-): Promise<Address> {
-  const token = localStorage.getItem("token");
+export async function getAddressById(id: number): Promise<Address> {
+  const response = await api.get(`/address/get-address/${id}`);
 
-  const response = await fetch(
-    `${API_BASE_URL}/address/get-address/${id}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message || "Failed to fetch address",
-    );
-  }
-
-  return data.address || data.data || data;
+  return response.data.address || response.data.data || response.data;
 }
 
 export async function updateAddress(
   id: number,
   addressData: CreateAddressRequest,
 ): Promise<void> {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(
-    `${API_BASE_URL}/address/edit-address/${id}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(addressData),
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message || "Failed to update address",
-    );
-  }
+  await api.put(`/address/edit-address/${id}`, addressData);
 }

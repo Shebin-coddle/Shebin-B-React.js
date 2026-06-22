@@ -1,6 +1,7 @@
 
 export const adminMenu = [
-  { path: "/admin-dashboard", label: "Dashboard" },
+    { path: "/", label: "Home"},
+  { path: "/admin-dashboard", label: "Overview" },
   { path: "/admin-users", label: "Users" },
   { path: "/admin-doctors", label: "Doctors" },
   { path: "/admin-nurses", label: "Nurses" },
@@ -13,19 +14,15 @@ export const adminMenu = [
 ];
 
 export const doctorMenu = [
- { path: "/doctor-dashboard", label: "Dashboard" },
+  { path: "/", label: "Home"},
+   { path: "/doctor-dashboard", label: "Overview" },
+  { path: "/doctor-profile", label: "Profile" },
   { path: "/doctor-appointments", label: "My Appointments" },
 ];
 
-export const patientMenu = [
-  { path: "/patient-dashboard", label: "Dashboard" },
-  { path: "/patient-book-appointment", label: "Book Appointment" },
-  { path: "/patient-appointments", label: "My Appointments" },
-  { path: "/patient-bills", label: "My Bills" },
-  { path: "/patient-medical-records", label: "My Medical Records" },
-];
 
 export const nurseMenu = [
- { path: "/nurse-dashboard", label: "Dashboard" },
+    { path: "/", label: "Home"},
+ { path: "/nurse-dashboard", label: "Overview" },
   { path: "/nurse-appointments", label: "Department Appointments" },
 ];

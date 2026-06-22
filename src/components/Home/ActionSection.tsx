@@ -34,7 +34,6 @@ function ActionSection() {
             Book Appointment
           </button>
 
-          <button className="action-secondary-btn">Contact Us</button>
         </div>
       </div>
     </section>

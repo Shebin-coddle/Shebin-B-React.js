@@ -3,6 +3,8 @@ import { getCompleteUser } from "../services/UserService";
 import "../styles/Profile.css";
 import { getAllDepartments } from "../services/DepartmentService";
 import type { Department } from "../types/DepartmentTypes";
+import { useNavigate } from "react-router-dom";
+
 
 type ProfileData = {
   id: number;
@@ -33,6 +35,7 @@ function Profile() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const navigate = useNavigate();
 
   const [error, setError] = useState("");
 
@@ -105,6 +108,14 @@ function Profile() {
                   : "Nurse"}
           </p>
         </div>
+        {profile.role_id === 3 && (
+          <button
+            className="edit-profile-btn"
+            onClick={() => navigate(`/patient-registration/edit/${profile.id}`)}
+          >
+            Edit Profile
+          </button>
+        )}
       </div>
 
       <div className="profile-card">
@@ -128,37 +139,37 @@ function Profile() {
         </div>
       </div>
 
-      {profile.role_id !== 1 &&(
-      <div className="profile-card">
-        <h3>Address Information</h3>
+      {profile.role_id !== 1 && (
+        <div className="profile-card">
+          <h3>Address Information</h3>
 
-        <div className="profile-grid">
-          <div>
-            <span className="label">Street</span>
-            <span>{profile.street_name}</span>
-          </div>
+          <div className="profile-grid">
+            <div>
+              <span className="label">Street</span>
+              <span>{profile.street_name}</span>
+            </div>
 
-          <div>
-            <span className="label">City</span>
-            <span>{profile.city}</span>
-          </div>
+            <div>
+              <span className="label">City</span>
+              <span>{profile.city}</span>
+            </div>
 
-          <div>
-            <span className="label">District</span>
-            <span>{profile.district}</span>
-          </div>
+            <div>
+              <span className="label">District</span>
+              <span>{profile.district}</span>
+            </div>
 
-          <div>
-            <span className="label">State</span>
-            <span>{profile.state}</span>
-          </div>
+            <div>
+              <span className="label">State</span>
+              <span>{profile.state}</span>
+            </div>
 
-          <div>
-            <span className="label">Pincode</span>
-            <span>{profile.pincode}</span>
+            <div>
+              <span className="label">Pincode</span>
+              <span>{profile.pincode}</span>
+            </div>
           </div>
         </div>
-      </div>
       )}
 
       {profile.role_id === 2 && (

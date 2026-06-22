@@ -9,7 +9,6 @@ import type { Appointment } from "../../types/AppointmentTypes";
 import { getAllUsers } from "../../services/UserService";
 import DeleteModal from "../../components/DeleteModal";
 
-
 function AdminAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   useState<Appointment | null>(null);
@@ -19,6 +18,8 @@ function AdminAppointments() {
   const navigate = useNavigate();
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
 
   useEffect(() => {
     async function fetchAppointments() {
@@ -38,7 +39,6 @@ function AdminAppointments() {
     fetchAppointments();
   }, []);
 
-
   useEffect(() => {
     async function fetchUsers() {
       try {
@@ -55,7 +55,6 @@ function AdminAppointments() {
     fetchUsers();
   }, []);
 
-  
   function openDeleteModal(id: number) {
     setDeleteId(id);
   }
@@ -80,6 +79,25 @@ function AdminAppointments() {
       setDeleting(false);
     }
   }
+
+  const filteredAppointments = appointments.filter((appointment) => {
+    const doctorName = (userName[appointment.doctor_id] || "").toLowerCase();
+
+    const patientName = (userName[appointment.patient_id] || "").toLowerCase();
+
+    const search = searchText.toLowerCase();
+
+    const appointmentDate = new Date(
+      appointment.appointment_date,
+    ).toLocaleDateString("en-CA");
+
+    const matchesSearch =
+      doctorName.includes(search) || patientName.includes(search);
+
+    const matchesDate = !selectedDate || appointmentDate === selectedDate;
+
+    return matchesSearch && matchesDate;
+  });
 
   const columns = [
     {
@@ -158,7 +176,34 @@ function AdminAppointments() {
           </button>
         </div>
       </div>
-      <DataTable columns={columns} data={appointments} />
+      <div className="appointment-filters">
+        <div>
+          <input
+            type="text"
+            placeholder="Search by patient/doctor name"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+          />
+        </div>
+
+        <button
+          onClick={() => {
+            setSearchText("");
+            setSelectedDate("");
+          }}
+        >
+          Clear Filters
+        </button>
+      </div>
+      <DataTable columns={columns} data={filteredAppointments} />
       <DeleteModal
         open={deleteId !== null}
         title="Delete Appointment"

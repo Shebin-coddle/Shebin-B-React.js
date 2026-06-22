@@ -10,8 +10,8 @@
 }
 
 .add-btn {
-  background: #2563eb;
-  color: #fff;
+  background: #aec4f2d8;
+  color: #0a0909;
   border: none;
   padding: 10px 18px;
   border-radius: 8px;
@@ -21,6 +21,7 @@
 
 .add-btn:hover {
   background: #1d4ed8;
+  color: white;
 }
 
 @media (max-width: 740px) {

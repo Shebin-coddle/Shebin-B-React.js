@@ -1,25 +1,25 @@
 import { useEffect, useState } from "react";
 import DataTable from "../../components/table/DataTable";
-
 import { getAllBills } from "../../services/BillService";
 import type { Bill } from "../../types/BillTypes";
+import DateSearch from "../../components/DateSearch";
+
 
 function PatientBills() {
   const patientId = Number(localStorage.getItem("user_id"));
-
   const [bills, setBills] = useState<Bill[]>([]);
-
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const [selectedDate,setSelectedDate]=useState("");
 
   useEffect(() => {
     async function fetchPatientBills() {
       try {
         const billData = await getAllBills();
-
         const patientBills = billData.filter(
           (bill) => bill.patient_id === patientId,
         );
+
 
         setBills(patientBills);
       } catch (err) {
@@ -35,6 +35,16 @@ function PatientBills() {
 
     fetchPatientBills();
   }, [patientId]);
+
+  const filteredBills=bills.filter((bill)=>{
+
+    const billDate=new Date(bill.date,).toLocaleDateString("en-CA");
+    const matchingDate=!selectedDate || billDate===selectedDate;
+
+
+    return matchingDate;
+
+  });
 
   const columns = [
     {
@@ -69,6 +79,8 @@ function PatientBills() {
 
   if (loading) {
     return <p>Loading bills...</p>;
+    
+    
   }
 
   if (error) {
@@ -77,9 +89,15 @@ function PatientBills() {
 
   return (
     <section>
+      
       <h2>My Bills</h2>
+     <DateSearch
+        selectedDate={selectedDate}
+        onDateChange={setSelectedDate}
+        onClear={() => setSelectedDate("")}
+      />
 
-      <DataTable columns={columns} data={bills} />
+      <DataTable columns={columns} data={filteredBills} />
     </section>
   );
 }

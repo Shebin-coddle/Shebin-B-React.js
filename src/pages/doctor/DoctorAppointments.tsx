@@ -11,13 +11,12 @@ import {
   completeAppointment,
 } from "../../services/AppointmentService";
 import { getMedicalRecordsByPatientId } from "../../services/MedicalRecordService";
-
 import type { MedicalRecord } from "../../types/MedicalRecordTypes";
+import DateSearch from "../../components/DateSearch";
 
 function DoctorAppointments() {
   const userId = localStorage.getItem("user_id");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [selectedPatient, setSelectedPatient] = useState<PatientDetails | null>(
@@ -26,12 +25,12 @@ function DoctorAppointments() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [showMedicalRecords, setShowMedicalRecords] = useState<boolean>(false);
+  const [selectedDate, setSelectedDate] = useState("");
 
   useEffect(() => {
     async function fetchDoctorAppointments() {
       try {
         const appointmentData = await getAllAppointments();
-
         const doctorAppointments = appointmentData.filter(
           (appointment) => appointment.doctor_id === Number(userId),
         );
@@ -119,14 +118,13 @@ function DoctorAppointments() {
       }
     }
   }
+  
   async function handleViewPatient(patientId: number) {
     try {
       const patientDetails = await getPatientDetailsById(patientId);
-
       const records = await getMedicalRecordsByPatientId(patientId);
 
       setSelectedPatient(patientDetails);
-
       setMedicalRecords(records);
       setShowMedicalRecords(true);
     } catch (err) {
@@ -137,16 +135,24 @@ function DoctorAppointments() {
       }
     }
   }
-  const filteredAppointments =
-    statusFilter === "all"
-      ? appointments
-      : appointments.filter(
-          (appointment) => appointment.status === statusFilter,
-        );
+
+  const filteredAppointments = appointments.filter((appointment) => {
+    const appointmentDate = new Date(
+      appointment.appointment_date,
+    ).toLocaleDateString("en-CA");
+
+    const matchingDate = !selectedDate || appointmentDate === selectedDate;
+    const matchingStatus =
+      statusFilter === "all" || appointment.status === statusFilter;
+
+    return matchingDate && matchingStatus;
+  });
+
   const columns = [
     {
       header: "Date",
-      render: (appointment: Appointment) =>new Date (appointment.appointment_date).toLocaleDateString("en-IN"),
+      render: (appointment: Appointment) =>
+        new Date(appointment.appointment_date).toLocaleDateString("en-IN"),
     },
     {
       header: "Start Time",
@@ -200,6 +206,11 @@ function DoctorAppointments() {
   return (
     <section>
       <h2>My Appointments</h2>
+      <DateSearch
+        selectedDate={selectedDate}
+        onDateChange={setSelectedDate}
+        onClear={() => setSelectedDate("")}
+      />
       <div className="status-filter">
         <button onClick={() => setStatusFilter("all")}>All</button>
         <button onClick={() => setStatusFilter("pending")}>Pending</button>
@@ -209,7 +220,6 @@ function DoctorAppointments() {
       </div>
       <DataTable columns={columns} data={filteredAppointments} />
 
-      
       {selectedPatient && (
         <DetailCard
           title="Selected Patient Details"
@@ -228,7 +238,7 @@ function DoctorAppointments() {
             },
             {
               label: "Date of Birth",
-              value: new Date (selectedPatient.dob).toLocaleDateString("en-IN"),
+              value: new Date(selectedPatient.dob).toLocaleDateString("en-IN"),
             },
             {
               label: "Blood Group",
@@ -260,7 +270,8 @@ function DoctorAppointments() {
                 </p>
 
                 <p>
-                  <strong>Date:</strong> {new Date (record.diagnosis_date).toLocaleDateString("en-IN")}
+                  <strong>Date:</strong>{" "}
+                  {new Date(record.diagnosis_date).toLocaleDateString("en-IN")}
                 </p>
               </div>
             ))

@@ -1,0 +1,19 @@
+.patient-layout {
+  min-height: 100vh;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+}
+
+.patient-content {
+  flex: 1;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 4%;
+}
+
+@media (max-width: 768px) {
+  .patient-content {
+    padding: 30px 24px;
+  }
+}

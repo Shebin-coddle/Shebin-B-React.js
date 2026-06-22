@@ -1,0 +1,69 @@
+.patient-dashboard {
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.dashboard-overview {
+  padding: 40px 8%;
+}
+
+.dashboard-overview h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 30px;
+}
+
+.dashboard-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.dashboard-card {
+  background: white;
+  border-radius: 18px;
+  padding: 28px 24px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 35px rgba(37, 99, 235, 0.15);
+}
+
+.dashboard-card h3 {
+  font-size: 1rem;
+  color: #64748b;
+  margin-bottom: 15px;
+}
+
+.dashboard-card p {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #2563eb;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .dashboard-overview {
+    padding: 30px 20px;
+  }
+
+  .dashboard-overview h2 {
+    font-size: 1.7rem;
+    text-align: center;
+  }
+
+  .dashboard-card {
+    padding: 22px;
+  }
+
+  .dashboard-card p {
+    font-size: 1.8rem;
+  }
+}

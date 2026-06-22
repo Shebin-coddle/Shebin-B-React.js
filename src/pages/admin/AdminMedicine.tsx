@@ -7,16 +7,18 @@ import {
 import type { Medicine } from "../../types/MedicineTypes";
 import { useNavigate } from "react-router-dom";
 import DeleteModal from "../../components/DeleteModal";
+import SearchInput from "../../components/SearchInput";
 
 
 function AdminMedicines() {
-  
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const navigate = useNavigate();
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [searchText, setSearchText] = useState<string>("");
 
   useEffect(() => {
     async function fetchMedicines() {
@@ -61,6 +63,13 @@ function AdminMedicines() {
     }
   }
 
+
+   const filteredMedicines = medicines.filter((medicine) => {
+    const name = medicine.medicine_name || "".toLowerCase();
+
+    return name.includes(searchText.toLowerCase());
+  });
+
   const columns = [
     {
       header: "Batch ID",
@@ -83,9 +92,11 @@ function AdminMedicines() {
       header: "Actions",
       render: (medicine: Medicine) => (
         <div className="table-actions">
-          <button onClick={(
-            
-          ) => navigate(`/admin-medicines/edit/${medicine.id}`)}>Edit</button>
+          <button
+            onClick={() => navigate(`/admin-medicines/edit/${medicine.id}`)}
+          >
+            Edit
+          </button>
           <button onClick={() => openDeleteModal(medicine.id)}>Delete</button>
         </div>
       ),
@@ -102,9 +113,15 @@ function AdminMedicines() {
 
   return (
     <section>
-      <div className="pages-header">
-        <h2>Medicines</h2>
-        <div className="pages-actions">
+      <div className="user-header">
+        <h2>Medicine</h2>
+        <div className="users-actions">
+          <SearchInput
+            value={searchText}
+            onChange={setSearchText}
+            placeholder="Search medicine by name"
+          />
+        
           <button
             className="add-btn"
             onClick={() => navigate("/admin-medicines/add")}
@@ -113,7 +130,7 @@ function AdminMedicines() {
           </button>
         </div>
       </div>
-      <DataTable columns={columns} data={medicines} />
+      <DataTable columns={columns} data={filteredMedicines} />
       <DeleteModal
         open={deleteId !== null}
         title="Delete Medicine"

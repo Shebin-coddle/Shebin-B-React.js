@@ -10,7 +10,7 @@ export function HandleBookAppointments(navigate:NavigateFunction,roleId:number|n
   }
 
   if(roleId===3){
-    navigate("/patient-book-appointment");
+    navigate("/doctor-list");
     return;
   }
 

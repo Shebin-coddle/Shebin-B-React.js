@@ -12,7 +12,7 @@ import {
 } from "../../services/UserService";
 
 import { getAllDepartments } from "../../services/DepartmentService";
-
+import { showSuccess, showError } from "../../utils/toast";
 import type { Department } from "../../types/DepartmentTypes";
 import type { CompleteUserForm } from "../../types/UserTypes";
 
@@ -216,12 +216,15 @@ function UserForm() {
     try {
       if (isEdit && id) {
         await updateCompleteUser(Number(id), formData);
+showSuccess("Details Updated")
       } else {
         await createCompleteUser(formData);
+        showSuccess("User added successfully")
       }
 
-      navigate("/admin-users");
+     
     } catch (error) {
+      showError("Opertion unsuccessfull")
       console.error(error);
     }
   }

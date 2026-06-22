@@ -6,6 +6,8 @@ import {
 } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import EditForm from "../../components/EditForm";
+import { showSuccess, showError } from "../../utils/toast";
+
 import {
   getMedicineById,
   createMedicine,
@@ -65,12 +67,15 @@ function MedicineForm() {
     try {
       if (isEdit) {
         await updateMedicine(Number(id), formData);
+        showSuccess("Details Updated")
       } else {
         await createMedicine(formData);
+        showSuccess("Medicine added successfully")
       }
 
       navigate("/admin-medicines");
     } catch (error) {
+      showError("Operation Unsuccessfull")
       console.error(error);
     }
   }

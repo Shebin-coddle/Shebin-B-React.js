@@ -3,186 +3,49 @@ import type {
   UpdateAppointmentRequest,
   CreateAppointmentRequest,
 } from "../types/AppointmentTypes";
-function getToken() {
-  return localStorage.getItem("token");
-}
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+import api from "./api";
 
 export async function getAllAppointments(): Promise<Appointment[]> {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(
-    `${API_BASE_URL}/appointment/get-allappointments`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to fetch appointments");
-  }
-
-  return data.appointments || data.data || data;
+  const response = await api.get(`/appointment/get-allappointments`);
+  return response.data.appointments || response.data.data || response.data;
 }
 
 export async function updateAppointment(
   id: number,
   appointmentData: UpdateAppointmentRequest,
 ): Promise<void> {
-  const response = await fetch(
-    `${API_BASE_URL}/appointment/edit-appointment/${id}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${getToken()}`,
-      },
-      body: JSON.stringify(appointmentData),
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to update appointment");
-  }
+  await api.put(`/appointment/edit-appointment/${id}`, appointmentData);
 }
+
 export async function cancelAppointment(id: number): Promise<void> {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(
-    `${API_BASE_URL}/appointment/edit-appointment/${id}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        status: "cancelled",
-      }),
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to cancel appointment");
-  }
+  await api.put(`/appointment/edit-appointment/${id}`);
 }
 
 export async function approveAppointment(id: number): Promise<void> {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(
-    `${API_BASE_URL}/appointment/edit-appointment/${id}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        status: "booked",
-      }),
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to approve appointment");
-  }
+  await api.put(`/appointment/edit-appointment/${id}`);
 }
+
 export async function completeAppointment(id: number): Promise<void> {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(
-    `${API_BASE_URL}/appointment/edit-appointment/${id}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        status: "completed",
-      }),
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to complete appointment");
-  }
+  await api.put(`/appointment/edit-appointment/${id}`);
 }
-
 
 export async function createAppointment(
   appointmentData: CreateAppointmentRequest,
 ): Promise<void> {
-  const response = await fetch(
-    `${API_BASE_URL}/appointment/add-appointment`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${getToken()}`,
-      },
-      body: JSON.stringify(appointmentData),
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to create appointment");
-  }
+  await api.post(`/appointment/add-appointment`, appointmentData);
 }
 
 export async function getAppointmentById(id: number) {
-  const token = localStorage.getItem("token");
+  const response = await api.get(`/appointment/get-appointment/${id}`);
 
-  const response = await fetch(
-    `${API_BASE_URL}/appointment/get-appointment/${id}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to fetch appointment");
-  }
-
-  return data.appointment || data.data || data;
+  return response.data.appointment || response.data.data || response.data;
 }
 
 export const removeAppointment = async (id: number) => {
-  const token = localStorage.getItem("token");
 
-  const response = await fetch(`http://localhost:3000/Appointment/remove-appointment/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await api.delete(
+    `/Appointment/remove-appointment/${id}`,
+  );
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to delete appointment");
-  }
-
-  return data;
+  return response.data;
 };

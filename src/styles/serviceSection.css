@@ -1,6 +1,6 @@
 .services-section {
   padding: 90px 8%;
-  background: rgb(244, 244, 244);
+  background:#f8fafc;
 }
 
 .section-header {
@@ -50,7 +50,7 @@
 
 .service-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 15px 35px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 15px 35px rgba(37, 100, 235, 0.211);
 }
 
 .service-icon {
@@ -91,7 +91,7 @@
 }
 
 .service-card button:hover {
-  background: #1d4ed8;
+  background: #0835af;
 }
 
 

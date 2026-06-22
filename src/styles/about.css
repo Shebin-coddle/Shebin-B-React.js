@@ -1,0 +1,79 @@
+.about-page {
+  padding: 60px 5%;
+  background: #f8fafc;
+}
+
+.about-hero {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.about-hero h1 {
+  font-size: 2.5rem;
+  color: #1f2937;
+  margin-bottom: 20px;
+}
+
+.about-hero p {
+  max-width: 800px;
+  margin: auto;
+  color: #6b7280;
+  line-height: 1.8;
+}
+
+.about-section {
+  margin-bottom: 60px;
+}
+
+.about-section h2 {
+  color: #2563eb;
+  margin-bottom: 20px;
+}
+
+.about-section p,
+.about-section li {
+  color: #4b5563;
+  line-height: 1.8;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 25px;
+}
+
+.feature-card {
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+.feature-card h3 {
+  color: #1f2937;
+  margin-bottom: 15px;
+}
+
+.mission-vision {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 30px;
+}
+
+.about-section ul {
+  padding-left: 20px;
+}
+
+.about-section li {
+  margin-bottom: 12px;
+}
+
+@media (max-width: 768px) {
+  .about-page {
+    padding: 40px 20px;
+  }
+
+  .about-hero h1 {
+    font-size: 2rem;
+  }
+}

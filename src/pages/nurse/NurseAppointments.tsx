@@ -18,6 +18,8 @@ function NurseAppointments() {
   const [patientNames, setPatientNames] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
 
   useEffect(() => {
     async function fetchNurseAppointments() {
@@ -94,6 +96,22 @@ function NurseAppointments() {
     }
   }
 
+  const filteredAppointments = appointments.filter((appointment) => {
+  const appointmentDate = new Date(
+    appointment.appointment_date,
+  )
+    .toLocaleDateString("en-CA");
+
+  const matchesDate =
+    !selectedDate || appointmentDate === selectedDate;
+
+  const matchesStatus =
+    !selectedStatus ||
+    appointment.status === selectedStatus;
+
+  return matchesDate && matchesStatus;
+});
+
   const columns = [
     {
       header: "Doctor",
@@ -107,7 +125,8 @@ function NurseAppointments() {
     },
     {
       header: "Date",
-      render: (appointment: Appointment) => new Date(appointment.appointment_date).toLocaleDateString("en-IN"),
+      render: (appointment: Appointment) =>
+        new Date(appointment.appointment_date).toLocaleDateString("en-IN"),
     },
     {
       header: "Start Time",
@@ -142,8 +161,42 @@ function NurseAppointments() {
   return (
     <section>
       <h2>Department Appointments</h2>
+      <div className="appointment-filters">
+        <div>
+          <label>Date</label>
 
-      <DataTable columns={columns} data={appointments} />
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label>Status</label>
+
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+          >
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="booked">Booked</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        <button
+          onClick={() => {
+            setSelectedDate("");
+            setSelectedStatus("");
+          }}
+        >
+          Clear Filters
+        </button>
+      </div>
+
+      <DataTable columns={columns} data={filteredAppointments} />
 
       {selectedAppointment && (
         <DetailCard
@@ -159,7 +212,9 @@ function NurseAppointments() {
             },
             {
               label: "Date",
-              value: new Date(selectedAppointment.appointment_date).toLocaleDateString("en-IN"),
+              value: new Date(
+                selectedAppointment.appointment_date,
+              ).toLocaleDateString("en-IN"),
             },
             {
               label: "Start Time",

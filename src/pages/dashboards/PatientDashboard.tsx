@@ -7,9 +7,9 @@ import type { Appointment } from "../../types/AppointmentTypes";
 import type { Bill } from "../../types/BillTypes";
 import type { MedicalRecord } from "../../types/MedicalRecordTypes";
 
+
 function PatientDashboard() {
   const userId = Number(localStorage.getItem("user_id"));
-
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
@@ -65,27 +65,33 @@ function PatientDashboard() {
   }
 
   return (
-    <section>
-       <h2>Overview</h2>
+    <div className="patient-dashboard">
+   
+      <section className="dashboard-overview">
+        <h2>Overview</h2>
 
-      <div className="dashboard-card-grid">
-        <DashboardCard title="My Appointments" count={appointments.length} />
+        <div className="dashboard-card-grid">
+          <DashboardCard title="My Appointments" count={appointments.length} />
 
-        <DashboardCard
-          title="Pending Appointments"
-          count={pendingAppointments.length}
-        />
+          <DashboardCard
+            title="Pending Appointments"
+            count={pendingAppointments.length}
+          />
 
-        <DashboardCard
-          title="Booked Appointments"
-          count={bookedAppointments.length}
-        />
+          <DashboardCard
+            title="Booked Appointments"
+            count={bookedAppointments.length}
+          />
 
-        <DashboardCard title="Pending Bills" count={pendingBills.length} />
+          <DashboardCard title="Pending Bills" count={pendingBills.length} />
 
-        <DashboardCard title="Medical Records" count={medicalRecords.length} />
-      </div>
-    </section>
+          <DashboardCard
+            title="Medical Records"
+            count={medicalRecords.length}
+          />
+        </div>
+      </section>
+    </div>
   );
 }
 

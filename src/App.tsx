@@ -23,9 +23,6 @@ import PatientMedicalRecords from "./pages/patient/PatientMedicalRecords";
 import NurseAppointments from "./pages/nurse/NurseAppointments";
 import Layout from "./components/layout/Layout";
 import UserForm from "./pages/admin/UserForm";
-import PatientEditForm from "./pages/admin/PatientEditForm";
-import DoctorEditForm from "./pages/admin/DoctorEditForm";
-import NurseEditForm from "./pages/admin/NurseEditForm";
 import DepartmentForm from "./pages/admin/DepartmentForm";
 import MedicineForm from "./pages/admin/MedicineForm";
 import AppointmentForm from "./pages/admin/AppointmentForm";
@@ -34,12 +31,11 @@ import Profile from "./pages/Profile";
 import Home from "./pages/Home";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import {
-  adminMenu,
-  doctorMenu,
-  nurseMenu,
-  patientMenu,
-} from "./components/Labels/Menu";
+import DoctorBookingPage from "./pages/DoctorBookingPage";
+import PatientLayout from "./components/layout/PatientLayout";
+import { adminMenu, doctorMenu, nurseMenu } from "./components/Labels/Menu";
+import PatientRegistration from "./pages/patient/RegisterForm";
+import About from "./pages/AboutPage";
 
 function App() {
   return (
@@ -65,20 +61,11 @@ function App() {
             <Route path="/admin-users/add" element={<UserForm />} />
             <Route path="/admin-users/edit/:id" element={<UserForm />} />
             <Route path="/admin-doctors" element={<AdminDoctors />} />
-            <Route
-              path="/admin-doctors/edit/:userId"
-              element={<DoctorEditForm />}
-            ></Route>
+
             <Route path="/admin-patients" element={<AdminPatients />} />
-            <Route
-              path="/admin-patients/edit/:userId"
-              element={<PatientEditForm />}
-            ></Route>
+
             <Route path="/admin-nurses" element={<AdminNurses />} />
-            <Route
-              path="/admin-nurses/edit/:userId"
-              element={<NurseEditForm />}
-            ></Route>
+
             <Route path="/admin-appointments" element={<AdminAppointments />} />
             <Route
               path="/admin-appointments/add"
@@ -135,17 +122,13 @@ function App() {
             <Route path="/nurse-dashboard" element={<NurseDashboard />} />
             <Route path="/nurse-appointments" element={<NurseAppointments />} />
           </Route>
-          <Route
-            element={
-              <Layout
-                sidebarTitle="Patient Portal"
-                topbarTitle="Patient Dashboard"
-                menuItems={patientMenu}
-              />
-            }
-          >
+
+          <Route element={<PatientLayout />}>
             <Route path="/patient-profile" element={<Profile />} />
             <Route path="/patient-dashboard" element={<PatientDashboard />} />
+           
+            
+
             <Route
               path="/patient-book-appointment"
               element={<PatientBookAppointment />}
@@ -155,17 +138,28 @@ function App() {
               element={<PatientAppointments />}
             />
             <Route path="/patient-bills" element={<PatientBills />} />
+
             <Route
               path="/patient-medical-records"
               element={<PatientMedicalRecords />}
             />
+            <Route path="/doctor-list" element={<DoctorBookingPage />} />
           </Route>
         </Route>
         <Route path="/" element={<Home />} />
+        <Route
+              path="/patient-registration"
+              element={<PatientRegistration />}
+            />
+             <Route
+              path="/patient-registration/edit/:id"
+              element={<PatientRegistration />}
+            />
+
         <Route path="*" element={<NotFound />} />
-       
+        <Route path="about" element={<About />} />
       </Routes>
-       <ToastContainer />
+      <ToastContainer />
     </BrowserRouter>
   );
 }

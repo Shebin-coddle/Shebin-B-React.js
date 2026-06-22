@@ -1,89 +1,26 @@
 import type { Nurse, UpdateNurseRequest } from "../types/NurseTypes";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+import api from "./api";
 
 export async function getAllNurses(): Promise<Nurse[]> {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(`${API_BASE_URL}/nurse/get-allnurses`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to fetch nurses");
-  }
-
-  return data.nurses || data.data || data;
+  const response = await api.get(`/nurse/get-allnurses`);
+  return response.data.nurses || response.data.data || response.data;
 }
 
 export async function updateNurse(
   userId: number,
   nurseData: UpdateNurseRequest,
 ): Promise<void> {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(`${API_BASE_URL}/nurse/edit-nurse/${userId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(nurseData),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to update nurse");
-  }
+  await api.put(`/nurse/edit-nurse/${userId}`, nurseData);
 }
 
-export async function getNurseById(
-  id: number,
-): Promise<Nurse> {
-  const token = localStorage.getItem("token");
+export async function getNurseById(id: number): Promise<Nurse> {
+  const response = await api.get(`/nurse/get-nurse/${id}`);
 
-  const response = await fetch(
-    `${API_BASE_URL}/nurse/get-nurse/${id}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message || "Failed to fetch nurse details",
-    );
-  }
-
- return data.data[0];
+  return response.data.data[0];
 }
 
 export const removeNurse = async (id: number) => {
-  const token = localStorage.getItem("token");
+  const response = await api.delete(`/nurse/remove-nurse/${id}`);
 
-  const response = await fetch(`http://localhost:3000/nurse/remove-nurse/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to delete nurse");
-  }
-
-  return data;
+  return response.data;
 };

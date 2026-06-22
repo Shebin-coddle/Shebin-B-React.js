@@ -8,6 +8,7 @@ import type { Department } from "../../types/DepartmentTypes";
 import { getAllDepartments } from "../../services/DepartmentService";
 
 import DeleteModal from "../../components/DeleteModal";
+import SearchInput from "../../components/SearchInput";
 
 function AdminDoctors() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -17,6 +18,7 @@ function AdminDoctors() {
   const [userName, setUserName] = useState<Record<number, string>>({});
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [searchText, setSearchText] = useState<string>("");
 
   const navigate = useNavigate();
   useEffect(() => {
@@ -94,6 +96,13 @@ function AdminDoctors() {
     }
   }
 
+   const filteredDoctors = doctors.filter((doctor) => {
+    const name = (userName[doctor.user_id] || "").toLowerCase();
+
+    return name.includes(searchText.toLowerCase());
+  });
+
+
   const columns = [
     {
       header: "User ID",
@@ -144,9 +153,14 @@ function AdminDoctors() {
 
   return (
     <section>
-      <div className="pages-header">
+      <div className="user-header">
         <h2>Doctors</h2>
-        <div className="pages-actions">
+        <div className="users-actions">
+          <SearchInput
+            value={searchText}
+            onChange={setSearchText}
+            placeholder="Search users by name"
+          />
           <button
             className="add-btn"
             onClick={() => navigate("/admin-users/add")}
@@ -155,7 +169,7 @@ function AdminDoctors() {
           </button>
         </div>
       </div>
-      <DataTable columns={columns} data={doctors} />
+      <DataTable columns={columns} data={filteredDoctors} />
 
       <DeleteModal
         open={deleteId !== null}

@@ -1,6 +1,7 @@
 import "../../styles/hero.css";
 import { HandleBookAppointments } from "../../services/HandleBookAppointments";
 import { useNavigate } from "react-router-dom";
+import heroimage from "../../assets/heroSection/image-1.jpg"
 
 function Hero() {
   const navigate=useNavigate();
@@ -29,7 +30,7 @@ function Hero() {
             Book Appointment
           </button>
 
-          <button className="secondary-btn">
+          <button className="secondary-btn" onClick={()=>navigate("/about")}>
             Learn More
           </button>
         </div>
@@ -54,7 +55,7 @@ function Hero() {
 
       <div className="hero-image">
         <img
-          src="https://images.unsplash.com/photo-1584515933487-779824d29309?w=900"
+          src={heroimage}
           alt="Hospital Doctors"
         />
       </div>

@@ -6,6 +6,7 @@ import type {
 } from "react";
 
 import EditForm from "../../components/EditForm";
+import { showSuccess, showError } from "../../utils/toast";
 
 import {
   getDepartmentById,
@@ -82,12 +83,15 @@ function DepartmentForm() {
           Number(id),
           formData,
         );
+        showSuccess("Details Updated")
       } else {
         await createDepartment(formData);
+        showSuccess("Department added successfully");
       }
 
       navigate("/admin-departments");
     } catch (error) {
+      showError("Operation Unsuccessfull");
       console.error(error);
     }
   }

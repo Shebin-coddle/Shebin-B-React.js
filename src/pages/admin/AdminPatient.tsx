@@ -4,23 +4,23 @@ import DataTable from "../../components/table/DataTable";
 import { getAllPatients, removePatient } from "../../services/PatientService";
 import type { Patient } from "../../types/PatientTypes";
 import DeleteModal from "../../components/DeleteModal";
-import "../../styles/pagesHeader.css"
+import "../../styles/pagesHeader.css";
+import SearchInput from "../../components/SearchInput";
 
-  type AdminPatientsProps = {
+type AdminPatientsProps = {
   userNameMap: Record<number, string>;
 };
 
-function AdminPatients({
-  userNameMap,
-}: AdminPatientsProps)  {
-
+function AdminPatients({ userNameMap }: AdminPatientsProps) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [searchText, setSearchText] = useState<string>("");
+
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     async function fetchPatients() {
       try {
@@ -40,9 +40,11 @@ function AdminPatients({
     fetchPatients();
   }, []);
 
+  const filteredPatients = patients.filter((patient) => {
+    const name = (userNameMap[patient.user_id] || "").toLowerCase();
 
-
- 
+    return name.includes(searchText.toLowerCase());
+  });
 
   function openDeleteModal(id: number) {
     setDeleteId(id);
@@ -57,7 +59,9 @@ function AdminPatients({
 
       await removePatient(deleteId);
 
-      setPatients((prev) => prev.filter((patient) => patient.user_id !== deleteId));
+      setPatients((prev) =>
+        prev.filter((patient) => patient.user_id !== deleteId),
+      );
 
       setDeleteId(null);
     } catch (err) {
@@ -113,30 +117,34 @@ function AdminPatients({
 
   return (
     <section>
-  <div className="pages-header">
-    <h2>Patients</h2>
+      <div className="user-header">
+        <h2>Patients</h2>
+        <div className="users-actions">
+          <SearchInput
+            value={searchText}
+            onChange={setSearchText}
+            placeholder="Search users by name"
+          />
+          <button
+            className="add-btn"
+            onClick={() => navigate("/admin-users/add")}
+          >
+            Add Patient
+          </button>
+        </div>
+      </div>
 
-    <div className="pages-actions">
-      <button
-        className="add-btn"
-        onClick={() => navigate("/admin-users/add")}
-      >
-        Add Patient
-      </button>
-    </div>
-  </div>
+      <DataTable columns={columns} data={filteredPatients} />
 
-  <DataTable columns={columns} data={patients} />
-
-  <DeleteModal
-    open={deleteId !== null}
-    title="Delete Patient"
-    message="Do you want to continue?"
-    loading={deleting}
-    onCancel={() => setDeleteId(null)}
-    onConfirm={confirmDelete}
-  />
-</section>
+      <DeleteModal
+        open={deleteId !== null}
+        title="Delete Patient"
+        message="Do you want to continue?"
+        loading={deleting}
+        onCancel={() => setDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
+    </section>
   );
 }
 

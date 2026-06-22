@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import { getAllUsers } from "../../services/UserService";
 import DeleteModal from "../../components/DeleteModal";
 
-
 function AdminBills() {
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -14,6 +13,8 @@ function AdminBills() {
   const [userName, setUserName] = useState<Record<number, string>>({});
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
 
   const navigate = useNavigate();
 
@@ -77,6 +78,18 @@ function AdminBills() {
     }
   }
 
+  const filteredBills = bills.filter((bill) => {
+    const patientName = (userName[bill.patient_id] || "").toLowerCase();
+
+    const matchesName = patientName.includes(searchText.toLowerCase());
+
+    const billDate = new Date(bill.date).toLocaleDateString("en-CA");
+
+    const matchesDate = !selectedDate || billDate === selectedDate;
+
+    return matchesName && matchesDate;
+  });
+
   const columns = [
     {
       header: "ID",
@@ -90,6 +103,11 @@ function AdminBills() {
     {
       header: "Fee ID",
       render: (bill: Bill) => bill.fee_id,
+    },
+
+    {
+      header: "Date",
+      render: (bill: Bill) => new Date(bill.date).toLocaleDateString("en-IN"),
     },
 
     {
@@ -114,9 +132,7 @@ function AdminBills() {
           <button onClick={() => navigate(`/admin-bills/edit/${bill.id}`)}>
             Edit
           </button>
-          <button onClick={() => openDeleteModal(bill.id)}>
-            Delete
-          </button>
+          <button onClick={() => openDeleteModal(bill.id)}>Delete</button>
         </div>
       ),
     },
@@ -143,8 +159,35 @@ function AdminBills() {
           </button>
         </div>
       </div>
+      <div className="appointment-filters">
+        <div>
+          <input
+            type="text"
+            placeholder="Search by patient name"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
+        </div>
 
-      <DataTable columns={columns} data={bills} />
+        <div>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+          />
+        </div>
+
+        <button
+          onClick={() => {
+            setSearchText("");
+            setSelectedDate("");
+          }}
+        >
+          Clear Filters
+        </button>
+      </div>
+
+      <DataTable columns={columns} data={filteredBills} />
       <DeleteModal
         open={deleteId !== null}
         title="Delete bill"

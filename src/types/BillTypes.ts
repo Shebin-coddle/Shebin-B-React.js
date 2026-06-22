@@ -18,3 +18,12 @@ export type UpdateBillRequest = {
   status: string;
   mode_of_payment: string;
 };
+
+export type CreateBillRequest = {
+  patient_id:number;
+    amount: number;
+    date: string;
+    description: string;
+    status: string;
+    mode_of_payment: string;
+}
