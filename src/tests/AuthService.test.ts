@@ -1,74 +1,68 @@
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { LoginUser } from "../services/AuthService";
-import { vi } from "vitest";
+import type { LoginRequest } from "../types/AuthTypes";
 
-beforeEach(() => {
-  vi.restoreAllMocks();
-});
-
-test("loginUser returns data when login is successful", async () => {
-  const mockResponse = {
-    success: true,
-    message: "Login successful",
-    token: "test-token",
-    user: {
-      id: 1,
-      email: "admin@gmail.com",
-      role_id: 1,
-    },
-  };
-
-  vi.stubGlobal(
-    "fetch",
-    vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => mockResponse,
-    }),
-  );
-
-  const result = await LoginUser({
-    email: "admin@gmail.com",
-    password: "123456",
+describe("AuthService - LoginUser", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    global.fetch = vi.fn();
   });
 
-  expect(result.token).toBe("test-token");
-  expect(result.user?.role_id).toBe(1);
-});
+  it("should return data when the login response is successful", async () => {
+    const mockResponseData = {
+      token: "mock-jwt-token",
+      userId: "user-123",
+      role_id: "1",
+      message: "Login successful",
+    };
 
-test("loginUser throws error when login fails", async () => {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn().mockResolvedValue({
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => mockResponseData,
+    });
+
+    const loginData: LoginRequest = {
+      email: "testuser@gmail.com",
+      password: "password123",
+    };
+
+    const result = await LoginUser(loginData);
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(result).toEqual(mockResponseData);
+  });
+
+  it("should throw an error with the backend message when the response is not ok", async () => {
+    const mockErrorData = {
+      message: "Invalid credentials",
+    };
+
+    (global.fetch as any).mockResolvedValue({
       ok: false,
-      json: async () => ({
-        success: false,
-        message: "Invalid email or password",
-      }),
-    }),
-  );
+      json: async () => mockErrorData,
+    });
 
-  await expect(
-    LoginUser({
-      email: "wrong@gmail.com",
-      password: "wrong",
-    }),
-  ).rejects.toThrow("Invalid email or password");
-});
+    const loginData: LoginRequest = {
+      email: "wronguser@gmail.com",
+      password: "wrongpassword",
+    };
 
-test("loginUser throws default error when response has no message", async () => {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn().mockResolvedValue({
+    await expect(LoginUser(loginData)).rejects.toThrow("Invalid credentials");
+  });
+
+  it("should throw a default fallback error message when the response is not ok and message is empty", async () => {
+    const mockErrorData = {};
+
+    (global.fetch as any).mockResolvedValue({
       ok: false,
-      json: async () => ({
-        success: false,
-      }),
-    }),
-  );
+      json: async () => mockErrorData,
+    });
 
-  await expect(
-    LoginUser({
-      email: "wrong@gmail.com",
-      password: "wrong",
-    }),
-  ).rejects.toThrow("Login failed");
+    const loginData: LoginRequest = {
+      email: "wronguser@gmail.com",
+      password: "wrongpassword",
+    };
+
+    await expect(LoginUser(loginData)).rejects.toThrow("Login failed");
+  });
 });

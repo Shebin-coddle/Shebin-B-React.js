@@ -30,3 +30,18 @@ export const removeBill = async (id: number) => {
 
   return response.data;
 };
+
+
+export async function payBill(
+  billId: number,
+  mode_of_payment: string,
+) {
+  const response = await api.put(
+    `/bill-payment/pay-bill/${billId}`,
+    {
+      mode_of_payment,
+    },
+  );
+
+  return response.data;
+}

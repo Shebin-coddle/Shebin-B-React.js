@@ -7,11 +7,13 @@ export type Bill = {
   description: string;
   status: string;
   mode_of_payment: string;
+  receipt_link?: string | null;
   created_at: string;
   updated_at: string;
 };
 
 export type UpdateBillRequest = {
+  fee_id: number;
   amount: number;
   date: string;
   description: string;
@@ -20,10 +22,11 @@ export type UpdateBillRequest = {
 };
 
 export type CreateBillRequest = {
-  patient_id:number;
-    amount: number;
-    date: string;
-    description: string;
-    status: string;
-    mode_of_payment: string;
-}
+  patient_id: number;
+  fee_id: number;
+  amount: number;
+  date: string;
+  description: string;
+  status: string;
+  mode_of_payment: string;
+};

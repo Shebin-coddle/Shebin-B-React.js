@@ -1,22 +1,26 @@
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { BrowserRouter } from "react-router-dom";
 import DoctorAppointments from "../pages/doctor/DoctorAppointments";
-
 import * as AppointmentService from "../services/AppointmentService";
 import * as PatientService from "../services/PatientService";
 import * as MedicalRecordService from "../services/MedicalRecordService";
+import * as PrescriptionService from "../services/PrescriptionService";
+import * as MedicineService from "../services/MedicineService";
 
-import type { Appointment } from "../types/AppointmentTypes";
-import type { PatientDetails } from "../types/PatientTypes";
-import type { MedicalRecord } from "../types/MedicalRecordTypes";
+const mockNavigate = vi.fn();
 
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 vi.mock("../services/AppointmentService", () => ({
   getAllAppointments: vi.fn(),
-  approveAppointment: vi.fn(),
-  cancelAppointment: vi.fn(),
-  completeAppointment: vi.fn(),
+  updateAppointmentStatus: vi.fn(),
 }));
 
 vi.mock("../services/PatientService", () => ({
@@ -27,256 +31,282 @@ vi.mock("../services/MedicalRecordService", () => ({
   getMedicalRecordsByPatientId: vi.fn(),
 }));
 
+vi.mock("../services/PrescriptionService", () => ({
+  getPrescriptionView: vi.fn(),
+}));
 
-type AppointmentServiceMock = {
-  getAllAppointments: ReturnType<typeof vi.fn>;
-  approveAppointment: ReturnType<typeof vi.fn>;
-  cancelAppointment: ReturnType<typeof vi.fn>;
-  completeAppointment: ReturnType<typeof vi.fn>;
-};
+vi.mock("../services/MedicineService", () => ({
+  getAllMedicines: vi.fn(),
+}));
 
-type PatientServiceMock = {
-  getPatientDetailsById: ReturnType<typeof vi.fn>;
-};
-
-type MedicalRecordServiceMock = {
-  getMedicalRecordsByPatientId: ReturnType<typeof vi.fn>;
-};
-
-
-const appointmentMock =
-  AppointmentService as unknown as AppointmentServiceMock;
-
-const patientMock = PatientService as unknown as PatientServiceMock;
-
-const recordMock =
-  MedicalRecordService as unknown as MedicalRecordServiceMock;
-
-
-const mockAppointments: Appointment[] = [
-  {
-    id: 1,
-    doctor_id: 1,
-    patient_id: 10,
-    appointment_date: "2026-01-01",
-    start_time: "10:00",
-    end_time: "10:30",
-    status: "pending",
-    created_at: "",
-    updated_at: "",
-    deleted_at: null,
-  },
-  {
-    id: 2,
-    doctor_id: 1,
-    patient_id: 11,
-    appointment_date: "2026-01-02",
-    start_time: "11:00",
-    end_time: "11:30",
-    status: "booked",
-    created_at: "",
-    updated_at: "",
-    deleted_at: null,
-  },
-];
-
-beforeEach(() => {
-  localStorage.setItem("user_id", "1");
-  vi.clearAllMocks();
-});
-
-afterEach(() => {
-  vi.resetAllMocks();
-});
-
+vi.mock("../utils/prescriptionGroup", () => ({
+  groupPrescriptions: (data: any) => data,
+}));
 
 describe("DoctorAppointments", () => {
-  test("renders appointments", async () => {
-    appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
-
-    render(<DoctorAppointments />);
-
-    await waitFor(() => {
-      expect(screen.getByText("My Appointments")).toBeInTheDocument();
-    });
-
-    expect(screen.getByText("2026-01-01")).toBeInTheDocument();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.setItem("user_id", "1");
   });
 
-  test("loading state", () => {
-    appointmentMock.getAllAppointments.mockImplementation(
-      () => new Promise(() => {})
+  const mockAppointments = [
+    {
+      id: 1,
+      doctor_id: 1,
+      patient_id: 10,
+      appointment_date: "2026-06-25",
+      start_time: "10:00",
+      end_time: "10:30",
+      status: "pending",
+    },
+  ];
+
+  it("renders appointments", async () => {
+    (AppointmentService.getAllAppointments as any).mockResolvedValue(mockAppointments);
+    (MedicineService.getAllMedicines as any).mockResolvedValue([]);
+
+    render(
+      <BrowserRouter>
+        <DoctorAppointments />
+      </BrowserRouter>
     );
 
-    render(<DoctorAppointments />);
-
-    expect(
-      screen.getByText(/Loading doctor appointments/i)
-    ).toBeInTheDocument();
+    expect(await screen.findByText("My Appointments")).toBeInTheDocument();
+    expect(await screen.findByText("pending")).toBeInTheDocument();
   });
 
-  test("error state", async () => {
-    appointmentMock.getAllAppointments.mockRejectedValue(
-      new Error("API Error")
+  it("shows empty state when no appointments", async () => {
+    (AppointmentService.getAllAppointments as any).mockResolvedValue([]);
+    (MedicineService.getAllMedicines as any).mockResolvedValue([]);
+
+    render(
+      <BrowserRouter>
+        <DoctorAppointments />
+      </BrowserRouter>
     );
 
-    render(<DoctorAppointments />);
+    await waitFor(() => {
+      const tbody = document.querySelector("tbody");
+      expect(tbody).toBeInTheDocument();
+      expect(tbody?.children.length).toBe(0);
+    });
+
+    expect(screen.getByText(/page 1 of 0/i)).toBeInTheDocument();
+  });
+
+  it("handles API failure", async () => {
+    (AppointmentService.getAllAppointments as any).mockRejectedValue(
+      new Error("API failed")
+    );
+    (MedicineService.getAllMedicines as any).mockResolvedValue([]);
+
+    render(
+      <BrowserRouter>
+        <DoctorAppointments />
+      </BrowserRouter>
+    );
+
+    expect(await screen.findByText(/failed/i)).toBeInTheDocument();
+  });
+
+  it("approves appointment", async () => {
+    (AppointmentService.getAllAppointments as any).mockResolvedValue(mockAppointments);
+    (AppointmentService.updateAppointmentStatus as any).mockResolvedValue({});
+    (MedicineService.getAllMedicines as any).mockResolvedValue([]);
+
+    render(
+      <BrowserRouter>
+        <DoctorAppointments />
+      </BrowserRouter>
+    );
+
+    fireEvent.click(await screen.findByText("Approve"));
 
     await waitFor(() => {
-      expect(screen.getByText("API Error")).toBeInTheDocument();
+      expect(AppointmentService.updateAppointmentStatus).toHaveBeenCalledWith(
+        1,
+        "booked"
+      );
     });
   });
 
-  test("filter by status", async () => {
-    appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
+  it("cancels appointment", async () => {
+    (AppointmentService.getAllAppointments as any).mockResolvedValue(mockAppointments);
+    (AppointmentService.updateAppointmentStatus as any).mockResolvedValue({});
+    (MedicineService.getAllMedicines as any).mockResolvedValue([]);
 
-    render(<DoctorAppointments />);
+    render(
+      <BrowserRouter>
+        <DoctorAppointments />
+      </BrowserRouter>
+    );
 
-    await waitFor(() => {
-      expect(screen.getByText("2026-01-01")).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByText("Booked"));
-
-    expect(screen.getByText("2026-01-02")).toBeInTheDocument();
-  });
-
-  test("approve appointment", async () => {
-    appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
-    appointmentMock.approveAppointment.mockResolvedValue(undefined);
-
-    render(<DoctorAppointments />);
+    fireEvent.click(await screen.findByText("Cancel"));
 
     await waitFor(() => {
-      fireEvent.click(screen.getAllByText("Approve")[0]);
+      expect(AppointmentService.updateAppointmentStatus).toHaveBeenCalledWith(
+        1,
+        "cancelled"
+      );
     });
-
-    expect(appointmentMock.approveAppointment).toHaveBeenCalledWith(1);
   });
 
-  test("cancel appointment", async () => {
-    appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
-    appointmentMock.cancelAppointment.mockResolvedValue(undefined);
+  it("completes appointment", async () => {
+    (AppointmentService.getAllAppointments as any).mockResolvedValue([
+      { ...mockAppointments[0], status: "booked" },
+    ]);
+    (AppointmentService.updateAppointmentStatus as any).mockResolvedValue({});
+    (MedicineService.getAllMedicines as any).mockResolvedValue([]);
 
-    render(<DoctorAppointments />);
+    render(
+      <BrowserRouter>
+        <DoctorAppointments />
+      </BrowserRouter>
+    );
+
+    fireEvent.click(await screen.findByText("Complete"));
 
     await waitFor(() => {
-      fireEvent.click(screen.getAllByText("Cancel")[0]);
+      expect(AppointmentService.updateAppointmentStatus).toHaveBeenCalledWith(
+        1,
+        "completed"
+      );
     });
-
-    expect(appointmentMock.cancelAppointment).toHaveBeenCalledWith(1);
   });
 
-  test("complete appointment", async () => {
-    appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
-    appointmentMock.completeAppointment.mockResolvedValue(undefined);
+  it("renders booked appointment actions", async () => {
+    (AppointmentService.getAllAppointments as any).mockResolvedValue([
+      { ...mockAppointments[0], status: "booked" },
+    ]);
+    (MedicineService.getAllMedicines as any).mockResolvedValue([]);
 
-    render(<DoctorAppointments />);
+    render(
+      <BrowserRouter>
+        <DoctorAppointments />
+      </BrowserRouter>
+    );
 
-    await waitFor(() => {
-      fireEvent.click(screen.getAllByText("Complete")[0]);
-    });
-
-    expect(appointmentMock.completeAppointment).toHaveBeenCalledWith(2);
+    expect(await screen.findByText("booked")).toBeInTheDocument();
+    expect(screen.getByText("Approve")).toBeInTheDocument();
+    expect(screen.getByText("Cancel")).toBeInTheDocument();
   });
 
-  test("view patient details", async () => {
-    appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
+  it("navigates to prescription page", async () => {
+    (AppointmentService.getAllAppointments as any).mockResolvedValue(mockAppointments);
+    (MedicineService.getAllMedicines as any).mockResolvedValue([]);
 
-    patientMock.getPatientDetailsById.mockResolvedValue({
-      id: 10,
+    render(
+      <BrowserRouter>
+        <DoctorAppointments />
+      </BrowserRouter>
+    );
+
+    fireEvent.click(await screen.findByText("Create Prescription"));
+
+    expect(mockNavigate).toHaveBeenCalledWith(
+      "/doctor-prescriptions/add/10"
+    );
+  });
+
+  it("opens patient details modal", async () => {
+    (AppointmentService.getAllAppointments as any).mockResolvedValue(mockAppointments);
+    (MedicineService.getAllMedicines as any).mockResolvedValue([]);
+
+    (PatientService.getPatientDetailsById as any).mockResolvedValue({
       first_name: "John",
       last_name: "Doe",
-      email: "john@test.com",
-      phone: "1234567890",
-      dob: "2000-01-01",
-      blood_group: "O+",
-    } satisfies PatientDetails);
-
-    recordMock.getMedicalRecordsByPatientId.mockResolvedValue([
-      {
-        id: 1,
-        patient_id: 10,
-        doctor_id: 1,
-        medical_condition: "Fever",
-        treatment: "Paracetamol",
-        status: "active",
-        diagnosis_date: "2026-01-01",
-      } satisfies MedicalRecord,
-    ]);
-
-    render(<DoctorAppointments />);
-
-    await waitFor(() => {
-      fireEvent.click(screen.getAllByText("Patient Details")[0]);
     });
 
-    await waitFor(() => {
-      expect(screen.getByText("John Doe")).toBeInTheDocument();
-      expect(screen.getByText("Fever")).toBeInTheDocument();
-    });
-  });
-  test("closes medical records panel", async () => {
-  appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
+    (MedicalRecordService.getMedicalRecordsByPatientId as any).mockResolvedValue([]);
+    (PrescriptionService.getPrescriptionView as any).mockResolvedValue([]);
 
-  patientMock.getPatientDetailsById.mockResolvedValue({
-    id: 10,
-    first_name: "John",
-    last_name: "Doe",
-    email: "john@test.com",
-    phone: "123",
-    dob: "2000-01-01",
-    blood_group: "O+",
-  } satisfies PatientDetails);
+    render(
+      <BrowserRouter>
+        <DoctorAppointments />
+      </BrowserRouter>
+    );
 
-  recordMock.getMedicalRecordsByPatientId.mockResolvedValue([]);
+    fireEvent.click(await screen.findByText("Patient Details"));
 
-  render(<DoctorAppointments />);
-
-  await waitFor(() => {
-    fireEvent.click(screen.getAllByText("Patient Details")[0]);
-  });
-
-  fireEvent.click(screen.getByText("Close Medical Records"));
-
-  expect(
-    screen.queryByText("Medical Records")
-  ).not.toBeInTheDocument();
-});
-test("filters all statuses", async () => {
-  appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
-
-  render(<DoctorAppointments />);
-
-  await waitFor(() => {
-    fireEvent.click(screen.getByText("Pending"));
-    fireEvent.click(screen.getByText("Booked"));
-    fireEvent.click(screen.getByText("Completed"));
-    fireEvent.click(screen.getByText("Cancelled"));
-    fireEvent.click(screen.getByText("All"));
-  });
-
-  expect(screen.getByText("My Appointments")).toBeInTheDocument();
-});
-test("handles non-error exception fallback", async () => {
-  appointmentMock.getAllAppointments.mockRejectedValue("random failure");
-
-  render(<DoctorAppointments />);
-
-  await waitFor(() => {
     expect(
-      screen.getByText("Error occurred while fetching doctor appointments")
+      await screen.findByText("Selected Patient Details")
     ).toBeInTheDocument();
   });
-});
-test("opens selected appointment detail card", async () => {
-  appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
 
-  render(<DoctorAppointments />);
+  it("closes patient modal", async () => {
+    (AppointmentService.getAllAppointments as any).mockResolvedValue(mockAppointments);
+    (MedicineService.getAllMedicines as any).mockResolvedValue([]);
 
-  await waitFor(() => {
-    fireEvent.click(screen.getAllByText("Approve")[0]);
+    (PatientService.getPatientDetailsById as any).mockResolvedValue({
+      first_name: "John",
+      last_name: "Doe",
+    });
+
+    (MedicalRecordService.getMedicalRecordsByPatientId as any).mockResolvedValue([]);
+    (PrescriptionService.getPrescriptionView as any).mockResolvedValue([]);
+
+    render(
+      <BrowserRouter>
+        <DoctorAppointments />
+      </BrowserRouter>
+    );
+
+    fireEvent.click(await screen.findByText("Patient Details"));
+
+    const modal = await screen.findByText("Selected Patient Details");
+const card = modal.closest(".user-detail-card");
+
+expect(card).not.toBeNull();
+
+const closeBtn = within(card as HTMLElement).getByText("Close");
+
+    fireEvent.click(closeBtn);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText("Selected Patient Details")
+      ).not.toBeInTheDocument();
+    });
   });
+it("renders multiple appointments correctly", async () => {
+  (AppointmentService.getAllAppointments as any).mockResolvedValue([
+    ...mockAppointments,
+    {
+      id: 2,
+      doctor_id: 1,
+      patient_id: 11,
+      appointment_date: "2026-06-26",
+      start_time: "11:00",
+      end_time: "11:30",
+      status: "booked",
+    },
+  ]);
 
+  (MedicineService.getAllMedicines as any).mockResolvedValue([]);
+
+  render(
+    <BrowserRouter>
+      <DoctorAppointments />
+    </BrowserRouter>,
+  );
+
+  expect(await screen.findByText("pending")).toBeInTheDocument();
+  expect(await screen.findByText("booked")).toBeInTheDocument();
 });
+  it("loads medicines on mount", async () => {
+    (AppointmentService.getAllAppointments as any).mockResolvedValue(mockAppointments);
+
+    const medicineMock = MedicineService.getAllMedicines as any;
+    medicineMock.mockResolvedValue([{ id: 1, name: "Paracetamol" }]);
+
+    render(
+      <BrowserRouter>
+        <DoctorAppointments />
+      </BrowserRouter>
+    );
+
+    await waitFor(() => {
+      expect(medicineMock).toHaveBeenCalled();
+    });
+  });
 });

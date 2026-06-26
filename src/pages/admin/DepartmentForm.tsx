@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import type {
-  ChangeEvent,
-  SyntheticEvent,
-} from "react";
+import type { ChangeEvent, SyntheticEvent } from "react";
 
 import EditForm from "../../components/EditForm";
 import { showSuccess, showError } from "../../utils/toast";
@@ -27,11 +24,11 @@ function DepartmentForm() {
 
   const navigate = useNavigate();
 
-  const [formData, setFormData] =
-    useState<DepartmentFormData>({
-      department_name: "",
-      contact_number: "",
-    });
+  const [formData, setFormData] = useState<DepartmentFormData>({
+    department_name: "",
+    contact_number: "",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!isEdit) {
@@ -40,14 +37,11 @@ function DepartmentForm() {
 
     async function loadDepartment() {
       try {
-        const department =
-          await getDepartmentById(Number(id));
+        const department = await getDepartmentById(Number(id));
 
         setFormData({
-          department_name:
-            department.department_name,
-          contact_number:
-            department.contact_number || "",
+          department_name: department.department_name,
+          contact_number: department.contact_number || "",
         });
       } catch (error) {
         console.error(error);
@@ -58,11 +52,7 @@ function DepartmentForm() {
   }, [id, isEdit]);
 
   function handleChange(
-    e: ChangeEvent<
-      HTMLInputElement |
-      HTMLTextAreaElement |
-      HTMLSelectElement
-    >,
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) {
     const { name, value } = e.target;
 
@@ -72,18 +62,32 @@ function DepartmentForm() {
     }));
   }
 
-  async function handleSubmit(
-    e: SyntheticEvent<HTMLFormElement>,
-  ) {
+  function validate(): boolean {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.department_name.trim()) {
+      newErrors.department_name = "Department name is required";
+    }
+
+    if (!formData.contact_number.trim()) {
+      newErrors.contact_number = "Contact number is required";
+    } else if (!/^\d{10}$/.test(formData.contact_number)) {
+      newErrors.contact_number = "Contact number must be 10 digits";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
+
+  async function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    if (!validate()) return;
 
     try {
       if (isEdit) {
-        await updateDepartment(
-          Number(id),
-          formData,
-        );
-        showSuccess("Details Updated")
+        await updateDepartment(Number(id), formData);
+        showSuccess("Details Updated");
       } else {
         await createDepartment(formData);
         showSuccess("Department added successfully");
@@ -113,17 +117,12 @@ function DepartmentForm() {
 
   return (
     <EditForm
-      title={
-        isEdit
-          ? "Edit Department"
-          : "Add Department"
-      }
+      title={isEdit ? "Edit Department" : "Add Department"}
       fields={fields}
+      errors={errors}
       onChange={handleChange}
       onSubmit={handleSubmit}
-      onCancel={() =>
-        navigate("/admin-departments")
-      }
+      onCancel={() => navigate("/admin-departments")}
     />
   );
 }

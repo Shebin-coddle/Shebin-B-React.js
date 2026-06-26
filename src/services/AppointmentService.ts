@@ -17,16 +17,13 @@ export async function updateAppointment(
   await api.put(`/appointment/edit-appointment/${id}`, appointmentData);
 }
 
-export async function cancelAppointment(id: number): Promise<void> {
-  await api.put(`/appointment/edit-appointment/${id}`);
-}
-
-export async function approveAppointment(id: number): Promise<void> {
-  await api.put(`/appointment/edit-appointment/${id}`);
-}
-
-export async function completeAppointment(id: number): Promise<void> {
-  await api.put(`/appointment/edit-appointment/${id}`);
+export async function updateAppointmentStatus(
+  id: number,
+  status: "cancelled" | "booked" | "completed",
+): Promise<void> {
+  await api.put(`/appointment/edit-appointment/${id}`, {
+    status,
+  });
 }
 
 export async function createAppointment(

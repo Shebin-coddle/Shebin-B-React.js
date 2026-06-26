@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import DataTable from "../../components/table/DataTable";
 import { getAllBills, removeBill } from "../../services/BillService";
+import { getAllFees } from "../../services/FeeService";
 import type { Bill } from "../../types/BillTypes";
 import { useNavigate } from "react-router-dom";
 import { getAllUsers } from "../../services/UserService";
 import DeleteModal from "../../components/DeleteModal";
+import type { Fee } from "../../types/FeeTypes";
 
 function AdminBills() {
   const [bills, setBills] = useState<Bill[]>([]);
@@ -15,6 +17,7 @@ function AdminBills() {
   const [deleting, setDeleting] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
+  const [feeMap, setFeeMap] = useState<Record<number, string>>({});
 
   const navigate = useNavigate();
 
@@ -38,6 +41,23 @@ function AdminBills() {
   }, []);
 
   useEffect(() => {
+    async function fetchFees() {
+      try {
+        const fees = await getAllFees();
+
+        const map = Object.fromEntries(
+          fees.map((f: Fee) => [f.id, f.fee_name]),
+        );
+
+        setFeeMap(map);
+      } catch (err) {
+        console.error("Failed to load fees", err);
+      }
+    }
+
+    fetchFees();
+  }, []);
+  useEffect(() => {
     async function fetchUsers() {
       try {
         const users = await getAllUsers();
@@ -55,9 +75,9 @@ function AdminBills() {
     fetchUsers();
   }, []);
 
-  function openDeleteModal(id: number) {
+  const openDeleteModal = useCallback((id: number) => {
     setDeleteId(id);
-  }
+  }, []);
 
   async function confirmDelete() {
     if (!deleteId) return;
@@ -89,6 +109,11 @@ function AdminBills() {
 
     return matchesName && matchesDate;
   });
+  const getReceiptUrl = (link?: string | null) => {
+  if (!link) return "";
+  if (link.startsWith("http")) return link;
+  return `${import.meta.env.VITE_API_URL}${link}`;
+};
 
   const columns = [
     {
@@ -101,8 +126,8 @@ function AdminBills() {
     },
 
     {
-      header: "Fee ID",
-      render: (bill: Bill) => bill.fee_id,
+      header: "Fee Type",
+      render: (bill: Bill) => feeMap[bill.fee_id] || bill.fee_id,
     },
 
     {
@@ -136,6 +161,22 @@ function AdminBills() {
         </div>
       ),
     },
+    {
+  header: "Receipt",
+  render: (bill: Bill) =>
+    bill.receipt_link ? (
+      <button
+        className="report-btn"
+        onClick={() =>
+          window.open(getReceiptUrl(bill.receipt_link), "_blank")
+        }
+      >
+        View Receipt
+      </button>
+    ) : (
+      "-"
+    ),
+}
   ];
 
   if (loading) {

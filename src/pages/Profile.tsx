@@ -5,7 +5,6 @@ import { getAllDepartments } from "../services/DepartmentService";
 import type { Department } from "../types/DepartmentTypes";
 import { useNavigate } from "react-router-dom";
 
-
 type ProfileData = {
   id: number;
   first_name: string;
@@ -35,17 +34,22 @@ function Profile() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const navigate = useNavigate();
-
   const [error, setError] = useState("");
 
+  const navigate = useNavigate();
   const userId = Number(localStorage.getItem("user_id"));
+
+  const roleNameMap: Record<number, string> = {
+    1: "Admin",
+    2: "Doctor",
+    3: "Patient",
+    4: "Nurse",
+  };
 
   useEffect(() => {
     async function fetchProfile() {
       try {
         const data = await getCompleteUser(userId);
-        console.log(data);
         setProfile(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load profile");
@@ -60,9 +64,8 @@ function Profile() {
   useEffect(() => {
     async function fetchDepartments() {
       try {
-        const departments = await getAllDepartments();
-
-        setDepartments(departments);
+        const data = await getAllDepartments();
+        setDepartments(data);
       } catch (error) {
         console.log(error);
       }
@@ -71,17 +74,9 @@ function Profile() {
     fetchDepartments();
   }, []);
 
-  if (loading) {
-    return <p>Loading profile...</p>;
-  }
-
-  if (error) {
-    return <p className="error">{error}</p>;
-  }
-
-  if (!profile) {
-    return <p>No profile data found.</p>;
-  }
+  if (loading) return <p>Loading profile...</p>;
+  if (error) return <p className="error">{error}</p>;
+  if (!profile) return <p>No profile data found.</p>;
 
   const departmentName =
     departments.find(
@@ -95,23 +90,21 @@ function Profile() {
       <div className="profile-header">
         <div>
           <h2>
-            {profile.first_name.toUpperCase()} {profile.last_name.toUpperCase()}
+            {profile.first_name.toUpperCase()}{" "}
+            {profile.last_name.toUpperCase()}
           </h2>
 
           <p className="profile-role">
-            {profile.role_id === 1
-              ? "Admin"
-              : profile.role_id === 2
-                ? "Doctor"
-                : profile.role_id === 3
-                  ? "Patient"
-                  : "Nurse"}
+            {roleNameMap[profile.role_id] ?? "Unknown"}
           </p>
         </div>
+
         {profile.role_id === 3 && (
           <button
             className="edit-profile-btn"
-            onClick={() => navigate(`/patient-registration/edit/${profile.id}`)}
+            onClick={() =>
+              navigate(`/patient-registration/edit/${profile.id}`)
+            }
           >
             Edit Profile
           </button>

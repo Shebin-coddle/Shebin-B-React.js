@@ -1,9 +1,15 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+  type ChangeEvent,
+  type SyntheticEvent,
+} from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import type { ChangeEvent, SyntheticEvent } from "react";
 
+import BreadCrumbs from "../../components/BreadCrumps";
 import EditForm from "../../components/EditForm";
-import type { EditField } from "../../components/EditForm";
+import Navbar from "../../components/home/NavBar";
+import Footer from "../../components/home/Footer";
 
 import {
   createCompleteUser,
@@ -12,15 +18,20 @@ import {
 } from "../../services/UserService";
 
 import { showSuccess, showError } from "../../utils/toast";
-import type { CompleteUserForm } from "../../types/UserTypes";
-import Navbar from "../../components/Home/NavBar";
-import Footer from "../../components/Home/Footer";
+import {
+  validateEmail,
+  validatePhone,
+  validatePincode,
+} from "../../utils/validation";
 
+import type { CompleteUserForm } from "../../types/UserTypes";
+import type { EditField } from "../../components/EditForm";
 
 function PatientRegistration() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState<CompleteUserForm>({
@@ -30,100 +41,69 @@ function PatientRegistration() {
     phone: "",
     password: "",
     role_id: 3,
-
     street_name: "",
     city: "",
     district: "",
     state: "",
     pincode: "",
-
     dob: "",
     blood_group: "",
-
     specialization: "",
     salary: 0,
     department_id: 0,
   });
-
-  useEffect(() => {
-    if (!isEdit || !id) return;
-
-    async function loadUser() {
-      try {
-        const user = await getCompleteUser(Number(id));
-
-        console.log(user);
-
-        setFormData({
-          first_name: user.first_name ?? "",
-          last_name: user.last_name ?? "",
-          email: user.email ?? "",
-          phone: user.phone ?? "",
-          password: "",
-          role_id: user.role_id,
-
-          street_name: user.street_name ?? "",
-          city: user.city ?? "",
-          district: user.district ?? "",
-          state: user.state ?? "",
-          pincode: user.pincode ?? "",
-
-          specialization: user.specialization ?? "",
-
-          salary: user.doctor_salary ?? user.nurse_salary ?? 0,
-
-          department_id:
-            user.doctor_department_id ?? user.nurse_department_id ?? 0,
-
-          dob: user.dob ? user.dob.split("T")[0] : "",
-          blood_group: user.blood_group ?? "",
-        });
-      } catch (error) {
-        console.error(error);
-      }
-    }
-
-    loadUser();
-  }, [id, isEdit]);
 
   function handleChange(
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) {
     const { name, value } = e.target;
 
+    const numericFields = new Set(["role_id", "salary", "department_id"]);
+
+    let parsedValue: string | number = value;
+
+    if (numericFields.has(name)) {
+      if (value === "") {
+        parsedValue = 0;
+      } else {
+        parsedValue = Number(value);
+      }
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]:
-        name === "role_id" || name === "salary" || name === "department_id"
-          ? Number(value)
-          : value,
+      [name]: parsedValue,
     }));
   }
 
-  function validateForm() {
+  function validateForm(): boolean {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.first_name.trim()) {
-      newErrors.first_name = "First name is required";
+    const requiredFields: Record<string, string> = {
+      first_name: "First name is required",
+      last_name: "Last name is required",
+      email: "Email is required",
+      phone: "Phone number is required",
+      street_name: "Street name is required",
+      city: "City is required",
+      district: "District is required",
+      state: "State is required",
+      dob: "Date of birth is required",
+      blood_group: "Blood group is required",
+    };
+
+    for (const [key, message] of Object.entries(requiredFields)) {
+      const value = (formData as any)[key];
+      if (!value || !String(value).trim()) {
+        newErrors[key] = message;
+      }
     }
 
-    if (!formData.last_name.trim()) {
-      newErrors.last_name = "Last name is required";
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (
-      !/^[a-zA-Z0-9]+([._%+-][a-zA-Z0-9]+)*@[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*(\.[a-zA-Z]{2,})+$/i.test(
-        formData.email,
-      )
-    ) {
+    if (formData.email && !validateEmail(formData.email)) {
       newErrors.email = "Invalid email";
     }
 
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^\d{10}$/.test(formData.phone)) {
+    if (formData.phone && !validatePhone(formData.phone)) {
       newErrors.phone = "Phone number must be 10 digits";
     }
 
@@ -131,53 +111,18 @@ function PatientRegistration() {
       newErrors.password = "Password is required";
     }
 
-    if (!isEdit && formData.password && formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
-    if (!formData.street_name.trim()) {
-      newErrors.street_name = "Street name is required";
-    }
-
-    if (!formData.city.trim()) {
-      newErrors.city = "City is required";
-    }
-
-    if (!formData.district.trim()) {
-      newErrors.district = "District is required";
-    }
-
-    if (!formData.state.trim()) {
-      newErrors.state = "State is required";
-    }
-
-    if (!/^\d{6}$/.test(formData.pincode)) {
+    if (formData.pincode && !validatePincode(formData.pincode)) {
       newErrors.pincode = "Pincode must be 6 digits";
     }
 
-   
-
-   
-      if (!formData.dob) {
-        newErrors.dob = "Date of birth is required";
-      }
-
-      if (!formData.blood_group?.trim()) {
-        newErrors.blood_group = "Blood group is required";
-      }
-
-
     setErrors(newErrors);
-
     return Object.keys(newErrors).length === 0;
   }
 
   async function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       if (isEdit && id) {
@@ -187,122 +132,99 @@ function PatientRegistration() {
         await createCompleteUser(formData);
         showSuccess("User added successfully");
       }
-    } catch (error) {
-      showError("Opertion unsuccessfull");
-      console.error(error);
+
+      navigate("/admin-users");
+    } catch {
+      showError("Operation unsuccessful");
     }
   }
 
+  useEffect(() => {
+    if (!isEdit || !id) return;
+
+    async function loadUser() {
+      try {
+        const user = await getCompleteUser(Number(id));
+
+        setFormData({
+          first_name: user.first_name ?? "",
+          last_name: user.last_name ?? "",
+          email: user.email ?? "",
+          phone: user.phone ?? "",
+          password: "",
+          role_id: user.role_id,
+          street_name: user.street_name ?? "",
+          city: user.city ?? "",
+          district: user.district ?? "",
+          state: user.state ?? "",
+          pincode: user.pincode ?? "",
+          specialization: user.specialization ?? "",
+          salary: user.doctor_salary ?? user.nurse_salary ?? 0,
+          department_id:
+            user.doctor_department_id ?? user.nurse_department_id ?? 0,
+          dob: user.dob ? user.dob.split("T")[0] : "",
+          blood_group: user.blood_group ?? "",
+        });
+      } catch {
+        showError("Failed to load user details");
+      }
+    }
+
+    loadUser();
+  }, [id, isEdit]);
+
+  const passwordField: EditField[] = isEdit
+  ? []
+  : [
+      {
+        name: "password",
+        label: "Password",
+        type: "text" as const,
+        value: formData.password,
+      },
+    ];
+
   const fields: EditField[] = [
-    {
-      name: "user-section",
-      label: "Patient Information",
-      type: "section",
-    },
-    {
-      name: "first_name",
-      label: "First Name",
-      type: "text",
-      value: formData.first_name,
-    },
-    {
-      name: "last_name",
-      label: "Last Name",
-      type: "text",
-      value: formData.last_name,
-    },
-    {
-      name: "email",
-      label: "Email",
-      type: "text",
-      value: formData.email,
-    },
-    {
-      name: "phone",
-      label: "Phone",
-      type: "text",
-      value: formData.phone,
-    },
-    ...(!isEdit
-      ? [
-          {
-            name: "password",
-            label: "Password",
-            type: "text" as const,
-            value: formData.password,
-          },
-        ]
-      : []),
+  { name: "user-section", label: "Patient Information", type: "section" },
 
-    {
-      name: "address-section",
-      label: "Address Information",
-      type: "section",
-    },
-    {
-      name: "street_name",
-      label: "Street Name",
-      type: "text",
-      value: formData.street_name,
-    },
-    {
-      name: "city",
-      label: "City",
-      type: "text",
-      value: formData.city,
-    },
-    {
-      name: "district",
-      label: "District",
-      type: "text",
-      value: formData.district,
-    },
-    {
-      name: "state",
-      label: "State",
-      type: "text",
-      value: formData.state,
-    },
-    {
-      name: "pincode",
-      label: "Pincode",
-      type: "text",
-      value: formData.pincode,
-    },
+  { name: "first_name", label: "First Name", type: "text", value: formData.first_name },
+  { name: "last_name", label: "Last Name", type: "text", value: formData.last_name },
+  { name: "email", label: "Email", type: "text", value: formData.email },
+  { name: "phone", label: "Phone", type: "text", value: formData.phone },
 
-    {
-      name: "patient-section",
-      label: "Patient Details",
-      type: "section",
-    },
-    {
-      name: "dob",
-      label: "Date Of Birth",
-      type: "date",
-      value: formData.dob,
-    },
-    {
-      name: "blood_group",
-      label: "Blood Group",
-      type: "text",
-      value: formData.blood_group,
-    },
-  ];
+  ...passwordField,
 
-  
+  { name: "address-section", label: "Address Information", type: "section" },
 
+  { name: "street_name", label: "Street Name", type: "text", value: formData.street_name },
+  { name: "city", label: "City", type: "text", value: formData.city },
+  { name: "district", label: "District", type: "text", value: formData.district },
+  { name: "state", label: "State", type: "text", value: formData.state },
+  { name: "pincode", label: "Pincode", type: "text", value: formData.pincode },
+
+  { name: "patient-section", label: "Patient Details", type: "section" },
+
+  { name: "dob", label: "Date Of Birth", type: "date", value: formData.dob },
+  { name: "blood_group", label: "Blood Group", type: "text", value: formData.blood_group },
+];
   return (
     <section>
-<Navbar/>
-    <EditForm
-      title={isEdit ? "Edit Patient" : "Add Patient"}
-      fields={fields}
-      errors={errors}
-      onChange={handleChange}
-      onSubmit={handleSubmit}
-      onCancel={() => navigate("/admin-users")}
-    />
-    <Footer/>
+      {!isEdit && <Navbar />}
+
+      <div className="editpatient">
+        {!isEdit && <BreadCrumbs />}
+
+        <EditForm
+          title={isEdit ? "Edit Details" : "Patient Registration"}
+          fields={fields}
+          errors={errors}
+          onChange={handleChange}
+          onSubmit={handleSubmit}
+          onCancel={() => navigate("/admin-users")}
+        />
+      </div>
+
+      <Footer />
     </section>
   );
 }

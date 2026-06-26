@@ -1,8 +1,8 @@
-type FilterDateProps = {
+type FilterDateProps = Readonly<{
   selectedDate: string;
   onDateChange: (value: string) => void;
   onClear: () => void;
-};
+}>;
 
 function DateSearch({
   selectedDate,
@@ -12,18 +12,17 @@ function DateSearch({
   return (
     <div className="appointment-filters">
       <div>
-        <label>Date</label>
+        <label htmlFor="appointment-date">Date</label>
 
         <input
+          id="appointment-date"
           type="date"
           value={selectedDate}
           onChange={(e) => onDateChange(e.target.value)}
         />
       </div>
 
-      <button onClick={onClear}>
-        Clear Filters
-      </button>
+      <button onClick={onClear}>Clear Filters</button>
     </div>
   );
 }

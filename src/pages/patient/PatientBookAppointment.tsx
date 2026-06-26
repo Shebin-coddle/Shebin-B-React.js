@@ -4,14 +4,13 @@ import {
   type ChangeEvent,
   type SyntheticEvent,
 } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation,useNavigate } from "react-router-dom";
 import { getAllDepartments } from "../../services/DepartmentService";
 import { getDoctorsWithDetails } from "../../services/DoctorService";
 import { createAppointment } from "../../services/AppointmentService";
 import type { Department } from "../../types/DepartmentTypes";
 import type { DoctorDetails } from "../../types/DoctorTypes";
 import EditForm from "../../components/EditForm";
-import { useNavigate } from "react-router-dom";
 import { showSuccess, showError } from "../../utils/toast";
 
 function PatientBookAppointment() {

@@ -96,12 +96,11 @@ function AdminDoctors() {
     }
   }
 
-   const filteredDoctors = doctors.filter((doctor) => {
+  const filteredDoctors = doctors.filter((doctor) => {
     const name = (userName[doctor.user_id] || "").toLowerCase();
 
     return name.includes(searchText.toLowerCase());
   });
-
 
   const columns = [
     {

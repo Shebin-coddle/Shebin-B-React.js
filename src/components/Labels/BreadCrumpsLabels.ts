@@ -25,6 +25,7 @@ export const labels: Record<string, string> = {
   "nurse-profile": "Profile",
   "doctor-list":"Book Appointment",
   "about":"About",
+  "patient-registration":"Patient Details",
 
   add: "Add",
   edit: "Edit",

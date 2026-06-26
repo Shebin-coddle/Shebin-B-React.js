@@ -244,6 +244,21 @@
   color: white;
 }
 
+.report-btn {
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #56805d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.report-btn:hover {
+  background: #1d4ed8;
+  transform: scale(1.03);
+}
 
 
 @media (max-width: 768px) {

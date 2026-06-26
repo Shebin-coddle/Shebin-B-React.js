@@ -7,11 +7,11 @@ import DeleteModal from "../../components/DeleteModal";
 import "../../styles/pagesHeader.css";
 import SearchInput from "../../components/SearchInput";
 
-type AdminPatientsProps = {
-  userNameMap: Record<number, string>;
-};
+type AdminPatientsProps = Readonly<{
+  userNameMap?: Record<number, string>;
+}>;
 
-function AdminPatients({ userNameMap }: AdminPatientsProps) {
+function AdminPatients({ userNameMap = {} }: AdminPatientsProps) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");

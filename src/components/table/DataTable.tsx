@@ -1,21 +1,25 @@
 import { useState } from "react";
+import type React from "react";
 
 type TableColumn<T> = {
   header: string;
-  render: (item: T) => React.ReactNode;
+  render: (item: T, index: number) => React.ReactNode;
 };
 
-type DataTableProps<T> = {
+type DataTableProps<T> = Readonly<{
   columns: TableColumn<T>[];
   data: T[];
   rowsPerPage?: number;
-};
+}>;
 
-function DataTable<T>({ columns, data, rowsPerPage = 10 }: DataTableProps<T>) {
+function DataTable<T>({
+  columns,
+  data,
+  rowsPerPage = 10,
+}: DataTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
 
   const totalPages = Math.ceil(data.length / rowsPerPage);
-
   const startIndex = (currentPage - 1) * rowsPerPage;
   const paginatedData = data.slice(startIndex, startIndex + rowsPerPage);
 
@@ -37,10 +41,12 @@ function DataTable<T>({ columns, data, rowsPerPage = 10 }: DataTableProps<T>) {
         </thead>
 
         <tbody>
-          {paginatedData.map((item, index) => (
-            <tr key={index}>
+          {paginatedData.map((item, rowIndex) => (
+            <tr key={startIndex + rowIndex}>
               {columns.map((column) => (
-                <td key={column.header}>{column.render(item)}</td>
+                <td key={column.header}>
+                  {column.render(item, rowIndex)}
+                </td>
               ))}
             </tr>
           ))}

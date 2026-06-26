@@ -11,7 +11,6 @@ import DeleteModal from "../../components/DeleteModal";
 
 function AdminAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  useState<Appointment | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [userName, setUserName] = useState<Record<number, string>>({});
@@ -79,6 +78,7 @@ function AdminAppointments() {
       setDeleting(false);
     }
   }
+  
 
   const filteredAppointments = appointments.filter((appointment) => {
     const doctorName = (userName[appointment.doctor_id] || "").toLowerCase();

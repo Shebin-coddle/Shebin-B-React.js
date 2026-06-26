@@ -11,13 +11,17 @@ import type { Appointment } from "../../types/AppointmentTypes";
 
 function NurseAppointments() {
   const nurseId = Number(localStorage.getItem("user_id"));
+
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
+
   const [doctors, setDoctors] = useState<DoctorDetails[]>([]);
   const [patientNames, setPatientNames] = useState<Record<number, string>>({});
+
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
 
@@ -27,26 +31,25 @@ function NurseAppointments() {
         const nurseData: Nurse = await getNurseById(nurseId);
         const doctorData = await getDoctorsWithDetails();
         const appointmentData = await getAllAppointments();
+
         const departmentDoctors = doctorData.filter(
           (doctor) => doctor.department_id === nurseData.department_id,
         );
 
-        const departmentDoctorIds = departmentDoctors.map(
-          (doctor) => doctor.user_id,
+        const departmentDoctorIds = new Set(
+          departmentDoctors.map((doctor) => doctor.user_id),
         );
 
         const filteredAppointments = appointmentData.filter((appointment) =>
-          departmentDoctorIds.includes(appointment.doctor_id),
+          departmentDoctorIds.has(appointment.doctor_id),
         );
 
         const uniquePatientIds = [
-          ...new Set(
-            filteredAppointments.map((appointment) => appointment.patient_id),
-          ),
+          ...new Set(filteredAppointments.map((a) => a.patient_id)),
         ];
 
         const patientDetailsList = await Promise.all(
-          uniquePatientIds.map((patientId) => getPatientDetailsById(patientId)),
+          uniquePatientIds.map((id) => getPatientDetailsById(id)),
         );
 
         const names: Record<number, string> = {};
@@ -73,13 +76,10 @@ function NurseAppointments() {
   }, [nurseId]);
 
   function getDoctorName(doctorId: number) {
-    const doctor = doctors.find((doctor) => doctor.user_id === doctorId);
-
-    if (!doctor) {
-      return "Unknown Doctor";
-    }
-
-    return `Dr. ${doctor.first_name} ${doctor.last_name}`;
+    const doctor = doctors.find((d) => d.user_id === doctorId);
+    return doctor
+      ? `Dr. ${doctor.first_name} ${doctor.last_name}`
+      : "Unknown Doctor";
   }
 
   function getPatientName(patientId: number) {
@@ -87,85 +87,71 @@ function NurseAppointments() {
   }
 
   function handleView(id: number) {
-    const appointment = appointments.find(
-      (appointment) => appointment.id === id,
-    );
-
-    if (appointment) {
-      setSelectedAppointment(appointment);
-    }
+    const appointment = appointments.find((a) => a.id === id);
+    if (appointment) setSelectedAppointment(appointment);
   }
 
   const filteredAppointments = appointments.filter((appointment) => {
-  const appointmentDate = new Date(
-    appointment.appointment_date,
-  )
-    .toLocaleDateString("en-CA");
+    const appointmentDate = new Date(
+      appointment.appointment_date,
+    ).toLocaleDateString("en-CA");
 
-  const matchesDate =
-    !selectedDate || appointmentDate === selectedDate;
+    const matchesDate = !selectedDate || appointmentDate === selectedDate;
 
-  const matchesStatus =
-    !selectedStatus ||
-    appointment.status === selectedStatus;
+    const matchesStatus =
+      !selectedStatus || appointment.status === selectedStatus;
 
-  return matchesDate && matchesStatus;
-});
+    return matchesDate && matchesStatus;
+  });
 
   const columns = [
     {
       header: "Doctor",
-      render: (appointment: Appointment) =>
-        getDoctorName(appointment.doctor_id),
+      render: (a: Appointment) => getDoctorName(a.doctor_id),
     },
     {
       header: "Patient",
-      render: (appointment: Appointment) =>
-        getPatientName(appointment.patient_id),
+      render: (a: Appointment) => getPatientName(a.patient_id),
     },
     {
       header: "Date",
-      render: (appointment: Appointment) =>
-        new Date(appointment.appointment_date).toLocaleDateString("en-IN"),
+      render: (a: Appointment) =>
+        new Date(a.appointment_date).toLocaleDateString("en-IN"),
     },
     {
       header: "Start Time",
-      render: (appointment: Appointment) => appointment.start_time,
+      render: (a: Appointment) => a.start_time,
     },
     {
       header: "End Time",
-      render: (appointment: Appointment) => appointment.end_time,
+      render: (a: Appointment) => a.end_time,
     },
     {
       header: "Status",
-      render: (appointment: Appointment) => appointment.status,
+      render: (a: Appointment) => a.status,
     },
     {
       header: "Actions",
-      render: (appointment: Appointment) => (
+      render: (a: Appointment) => (
         <div className="table-actions">
-          <button onClick={() => handleView(appointment.id)}>View</button>
+          <button onClick={() => handleView(a.id)}>View</button>
         </div>
       ),
     },
   ];
 
-  if (loading) {
-    return <p>Loading department appointments...</p>;
-  }
-
-  if (error) {
-    return <p className="error">{error}</p>;
-  }
+  if (loading) return <p>Loading department appointments...</p>;
+  if (error) return <p className="error">{error}</p>;
 
   return (
     <section>
       <h2>Department Appointments</h2>
+
       <div className="appointment-filters">
         <div>
-          <label>Date</label>
-
+          <label htmlFor="dateFilter">Date</label>
           <input
+            id="dateFilter"
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
@@ -173,9 +159,9 @@ function NurseAppointments() {
         </div>
 
         <div>
-          <label>Status</label>
-
+          <label htmlFor="statusFilter">Status</label>
           <select
+            id="statusFilter"
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
           >
@@ -187,6 +173,7 @@ function NurseAppointments() {
         </div>
 
         <button
+          type="button"
           onClick={() => {
             setSelectedDate("");
             setSelectedStatus("");

@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
+import type { ComponentType } from "react";
 import { getAllUsers } from "../services/UserService";
 
-type NewProps = {
+type InjectedProps = {
   userNameMap: Record<number, string>;
 };
 
 function withUsersMap<P extends object>(
-  Component: React.ComponentType<P & NewProps>
-) {
+  Component: ComponentType<P & InjectedProps>
+): ComponentType<P> {
   function Wrapped(props: P) {
     const [userNameMap, setUserNameMap] = useState<Record<number, string>>({});
 
@@ -16,7 +17,7 @@ function withUsersMap<P extends object>(
         try {
           const users = await getAllUsers();
 
-          const map = Object.fromEntries(
+          const map: Record<number, string> = Object.fromEntries(
             users.map((u) => [
               u.id,
               `${u.first_name} ${u.last_name}`,
@@ -24,20 +25,15 @@ function withUsersMap<P extends object>(
           );
 
           setUserNameMap(map);
-        } catch (err) {
-          console.error("Failed to load users", err);
+        } catch (error) {
+          console.error("Failed to load users", error);
         }
       }
 
       fetchUsers();
     }, []);
 
-    return (
-      <Component
-        {...props}
-        userNameMap={userNameMap}
-      />
-    );
+    return <Component {...props} userNameMap={userNameMap} />;
   }
 
   Wrapped.displayName = `withUsersMap(${Component.displayName || Component.name})`;
@@ -45,4 +41,4 @@ function withUsersMap<P extends object>(
   return Wrapped;
 }
 
-export default withUsersMap;  
+export default withUsersMap;

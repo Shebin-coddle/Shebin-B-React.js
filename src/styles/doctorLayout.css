@@ -8,11 +8,67 @@
 .status-filter button {
   padding: 8px 12px;
   border: none;
-  background-color: #e5e7eb;
+  background-color: #4b74c700;
   border-radius: 6px;
   cursor: pointer;
+  color: rgb(1, 1, 1);
+  font-weight: 700;
+  font-size: 18px;
 }
 
 .status-filter button:hover {
-  background-color: #d1d5db;
+  background-color: #d1d5db00;
+  color: blue;
+}
+
+
+.card {
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.savebutton {
+  background: rgba(0, 0, 0, 0);
+  color: rgb(23, 42, 220);
+  font-weight: 700;
+  font-size: 16px;
+
+}
+
+.savebutton:hover{
+  color: rgb(3, 15, 94);
+}
+
+button[type="button"] {
+  background: rgba(0, 128, 0, 0);
+  color: rgb(19, 170, 11);
+  font-weight: 700;
+    font-size: 16px;
+
+}
+
+button[type="button"]:hover{
+  color: rgb(8, 94, 3);
+}
+
+.card button {
+  background: rgba(255, 0, 0, 0);
+  color: rgb(216, 14, 14);
+  font-weight: 700;
+    font-size: 16px;
+
+
+}
+
+.card button:hover{
+   color: rgb(89, 8, 8);
 }

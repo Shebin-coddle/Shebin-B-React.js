@@ -1,8 +1,8 @@
-type SearchInputProps = {
+type SearchInputProps =Readonly<{
   value: string;
   placeholder: string;
   onChange: (value: string) => void;
-};
+}>;
 
 function SearchInput({ value, placeholder, onChange }: SearchInputProps) {
   return (

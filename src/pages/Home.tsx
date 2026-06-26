@@ -1,19 +1,19 @@
-import Navbar from "../components/Home/NavBar";
-import HeroSection from "../components/Home/HeroSection";
-import ServicesSection from "../components/Home/ServiceSection";
-import ActionSection from "../components/Home/ActionSection";
-import Footer from "../components/Home/Footer";
-import SliderSection from "../components/Home/SliderSection";
+import Navbar from "../components/home/NavBar";
+import HeroSection from "../components/home/HeroSection";
+import ServicesSection from "../components/home/ServiceSection";
+import ActionSection from "../components/home/ActionSection";
+import Footer from "../components/home/Footer";
+import SliderSection from "../components/home/SliderSection";
 
 function Home() {
   return (
     <>
       <Navbar />
       <HeroSection />
-      <SliderSection/>
-       <ServicesSection />
+      <SliderSection />
+      <ServicesSection />
       <ActionSection />
-      <Footer />  
+      <Footer />
     </>
   );
 }

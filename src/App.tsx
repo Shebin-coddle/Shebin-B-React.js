@@ -36,6 +36,9 @@ import PatientLayout from "./components/layout/PatientLayout";
 import { adminMenu, doctorMenu, nurseMenu } from "./components/Labels/Menu";
 import PatientRegistration from "./pages/patient/RegisterForm";
 import About from "./pages/AboutPage";
+import PrescriptionForm from "./pages/doctor/PrescriptionForm";
+import AdminFees from "./pages/admin/AdminFeeStructure";
+import FeeForm from "./pages/admin/FeeStructureForm";
 
 function App() {
   return (
@@ -65,6 +68,10 @@ function App() {
             <Route path="/admin-patients" element={<AdminPatients />} />
 
             <Route path="/admin-nurses" element={<AdminNurses />} />
+            <Route path="/admin-fees" element={<AdminFees />} />
+            <Route path="/admin-fees/add" element={<FeeForm />} />
+            <Route path="/admin-fees/edit/:id" element={<FeeForm />} />
+
 
             <Route path="/admin-appointments" element={<AdminAppointments />} />
             <Route
@@ -101,6 +108,10 @@ function App() {
               />
             }
           >
+            <Route
+              path="/doctor-prescriptions/add/:patientId"
+              element={<PrescriptionForm />}
+            />
             <Route path="/doctor-profile" element={<Profile />} />
             <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
             <Route
@@ -126,8 +137,6 @@ function App() {
           <Route element={<PatientLayout />}>
             <Route path="/patient-profile" element={<Profile />} />
             <Route path="/patient-dashboard" element={<PatientDashboard />} />
-           
-            
 
             <Route
               path="/patient-book-appointment"
@@ -144,17 +153,14 @@ function App() {
               element={<PatientMedicalRecords />}
             />
             <Route path="/doctor-list" element={<DoctorBookingPage />} />
-          </Route>
-        </Route>
-        <Route path="/" element={<Home />} />
-        <Route
-              path="/patient-registration"
-              element={<PatientRegistration />}
-            />
-             <Route
+            <Route
               path="/patient-registration/edit/:id"
               element={<PatientRegistration />}
             />
+          </Route>
+        </Route>
+        <Route path="/" element={<Home />} />
+        <Route path="/patient-registration" element={<PatientRegistration />} />
 
         <Route path="*" element={<NotFound />} />
         <Route path="about" element={<About />} />

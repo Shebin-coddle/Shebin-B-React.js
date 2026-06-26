@@ -8,10 +8,8 @@ import {
 import type { Department } from "../../types/DepartmentTypes";
 import DeleteModal from "../../components/DeleteModal";
 
-
 function AdminDepartments() {
   const [departments, setDepartments] = useState<Department[]>([]);
-  useState<Department | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const navigate = useNavigate();
@@ -100,7 +98,7 @@ function AdminDepartments() {
 
   return (
     <section>
-     <div className="pages-header">
+      <div className="pages-header">
         <h2>Departments</h2>
         <div className="pages-actions">
           <button

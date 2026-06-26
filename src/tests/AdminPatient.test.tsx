@@ -1,243 +1,146 @@
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { describe, test, expect, vi, beforeEach } from "vitest";
-
+import { render, screen, fireEvent, waitFor,within  } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import AdminPatients from "../pages/admin/AdminPatient";
-import * as PatientService from "../services/PatientService";
+import { getAllPatients, removePatient } from "../services/PatientService";
+import { useNavigate } from "react-router-dom";
 import type { Patient } from "../types/PatientTypes";
 
 vi.mock("../services/PatientService", () => ({
   getAllPatients: vi.fn(),
-  updatePatient: vi.fn(),
+  removePatient: vi.fn(),
 }));
 
-const patientMock = vi.mocked(PatientService);
+vi.mock("react-router-dom", () => ({
+  useNavigate: vi.fn(),
+}));
 
 const mockPatients: Patient[] = [
   {
     user_id: 1,
-    dob: "2000-01-01T00:00:00.000Z",
-    blood_group: "O+",
-    created_at: "",
-    updated_at: "",
+    dob: "1990-01-01",
+    blood_group: "A+",
+    created_at: "2026-01-01",
+    updated_at: "2026-01-01",
     deleted_at: null,
   },
   {
     user_id: 2,
-    dob: "1998-05-20T00:00:00.000Z",
-    blood_group: "",
-    created_at: "",
-    updated_at: "",
+    dob: "1995-05-05",
+    blood_group: "B-",
+    created_at: "2026-01-01",
+    updated_at: "2026-01-01",
     deleted_at: null,
   },
 ];
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+const mockUserNameMap = {
+  1: "John Doe",
+  2: "Jane Smith",
+};
 
 describe("AdminPatients", () => {
-  test("renders loading state", () => {
-    patientMock.getAllPatients.mockImplementation(
-      () => new Promise(() => {})
+  const mockNavigate = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (useNavigate as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
+      mockNavigate
+    );
+  });
+
+  it("renders loading state", () => {
+    (getAllPatients as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
+      new Promise(() => {})
     );
 
-    render(<AdminPatients />);
+    render(<AdminPatients userNameMap={mockUserNameMap} />);
 
-    expect(screen.getByText("Loading patients...")).toBeInTheDocument();
+    expect(screen.getByText(/loading patients/i)).toBeInTheDocument();
   });
 
-  test("renders patients table", async () => {
-    patientMock.getAllPatients.mockResolvedValue(mockPatients);
-
-    render(<AdminPatients />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Patients")).toBeInTheDocument();
-    });
-
-    expect(screen.getByText("O+")).toBeInTheDocument();
-  });
-
-  test("handles fetch error", async () => {
-    patientMock.getAllPatients.mockRejectedValue(
-      new Error("Failed to fetch patients")
+  it("renders patient table after load", async () => {
+    (getAllPatients as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockPatients
     );
 
-    render(<AdminPatients />);
+    render(<AdminPatients userNameMap={mockUserNameMap} />);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Failed to fetch patients")
-      ).toBeInTheDocument();
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
+      expect(screen.getByText("Jane Smith")).toBeInTheDocument();
     });
   });
 
-  test("handles non-error fetch exception", async () => {
-    patientMock.getAllPatients.mockRejectedValue("random error");
-
-    render(<AdminPatients />);
-
-    await waitFor(() => {
-      expect(
-        screen.getByText("Error occurred while fetching patients")
-      ).toBeInTheDocument();
-    });
-  });
-
-  test("opens patient details modal", async () => {
-    patientMock.getAllPatients.mockResolvedValue(mockPatients);
-
-    render(<AdminPatients />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Patients")).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getAllByText("View")[0]);
-
-    expect(
-      screen.getByText("Selected Patient Details")
-    ).toBeInTheDocument();
-
-expect(
-  screen.getAllByText("2000-01-01T00:00:00.000Z")
-).toHaveLength(2);  });
-
-  test("closes patient details modal", async () => {
-    patientMock.getAllPatients.mockResolvedValue(mockPatients);
-
-    render(<AdminPatients />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Patients")).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getAllByText("View")[0]);
-
-    fireEvent.click(screen.getByText("Close"));
-
-    await waitFor(() => {
-      expect(
-        screen.queryByText("Selected Patient Details")
-      ).not.toBeInTheDocument();
-    });
-  });
-
-  test("opens edit form", async () => {
-    patientMock.getAllPatients.mockResolvedValue(mockPatients);
-
-    render(<AdminPatients />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Patients")).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getAllByText("Edit")[0]);
-
-    expect(screen.getByText("Edit Patient")).toBeInTheDocument();
-
-    expect(screen.getByDisplayValue("O+")).toBeInTheDocument();
-  });
-
-  test("updates patient successfully", async () => {
-    patientMock.getAllPatients.mockResolvedValue(mockPatients);
-    patientMock.updatePatient.mockResolvedValue(undefined);
-
-    render(<AdminPatients />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Patients")).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getAllByText("Edit")[0]);
-
-    const bloodGroupInput = screen.getByDisplayValue("O+");
-
-    fireEvent.change(bloodGroupInput, {
-      target: {
-        name: "blood_group",
-        value: "A+",
-      },
-    });
-
-fireEvent.click(screen.getByText("Update"));
-    await waitFor(() => {
-      expect(patientMock.updatePatient).toHaveBeenCalledWith(1, {
-        dob: "2000-01-01",
-        blood_group: "A+",
-      });
-    });
-  });
-
-  test("handles update error", async () => {
-    patientMock.getAllPatients.mockResolvedValue(mockPatients);
-
-    patientMock.updatePatient.mockRejectedValue(
-      new Error("Update failed")
+  it("filters patients by name", async () => {
+    (getAllPatients as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockPatients
     );
 
-    render(<AdminPatients />);
+    render(<AdminPatients userNameMap={mockUserNameMap} />);
 
-    await waitFor(() => {
-      expect(screen.getByText("Patients")).toBeInTheDocument();
-    });
+    await screen.findByText("John Doe");
 
-    fireEvent.click(screen.getAllByText("Edit")[0]);
+    const searchInput = screen.getByPlaceholderText(
+      /search users by name/i
+    );
 
-fireEvent.click(screen.getByText("Update"));
-    await waitFor(() => {
-      expect(screen.getByText("Update failed")).toBeInTheDocument();
-    });
+    fireEvent.change(searchInput, { target: { value: "Jane" } });
+
+    expect(screen.getByText("Jane Smith")).toBeInTheDocument();
+    expect(screen.queryByText("John Doe")).not.toBeInTheDocument();
   });
 
-  test("handles non-error update exception", async () => {
-    patientMock.getAllPatients.mockResolvedValue(mockPatients);
+ it("navigates to add page", async () => {
+  (getAllPatients as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
-    patientMock.updatePatient.mockRejectedValue("unknown");
+  render(<AdminPatients userNameMap={mockUserNameMap} />);
 
-    render(<AdminPatients />);
+  await screen.findByText("Add Patient");
 
-    await waitFor(() => {
-      expect(screen.getByText("Patients")).toBeInTheDocument();
-    });
+  fireEvent.click(screen.getByText("Add Patient"));
 
-    fireEvent.click(screen.getAllByText("Edit")[0]);
+  expect(mockNavigate).toHaveBeenCalledWith("/admin-users/add");
+});
 
-fireEvent.click(screen.getByText("Update"));
-    await waitFor(() => {
-      expect(
-        screen.getByText("Error occurred while updating patient")
-      ).toBeInTheDocument();
-    });
+ it("deletes a patient", async () => {
+  (getAllPatients as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+    mockPatients
+  );
+
+  (removePatient as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+    undefined
+  );
+
+  render(<AdminPatients userNameMap={mockUserNameMap} />);
+
+  await screen.findByText("John Doe");
+
+  const deleteButtons = screen.getAllByText("Delete");
+  fireEvent.click(deleteButtons[0]);
+
+  expect(screen.getByText(/do you want to continue/i)).toBeInTheDocument();
+
+  const modal = screen.getByRole("dialog");
+
+  fireEvent.click(
+    within(modal).getByRole("button", { name: "Delete" })
+  );
+
+  await waitFor(() => {
+    expect(removePatient).toHaveBeenCalledWith(1);
   });
 
-  test("cancel edit form", async () => {
-    patientMock.getAllPatients.mockResolvedValue(mockPatients);
+  expect(screen.queryByText("John Doe")).not.toBeInTheDocument();
+});
+  it("handles fetch error", async () => {
+    (getAllPatients as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("Failed to fetch")
+    );
 
-    render(<AdminPatients />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Patients")).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getAllByText("Edit")[0]);
-
-    fireEvent.click(screen.getByText("Cancel"));
+    render(<AdminPatients userNameMap={mockUserNameMap} />);
 
     await waitFor(() => {
-      expect(
-        screen.queryByText("Edit Patient")
-      ).not.toBeInTheDocument();
-    });
-  });
-
-  test("renders N/A blood group", async () => {
-    patientMock.getAllPatients.mockResolvedValue(mockPatients);
-
-    render(<AdminPatients />);
-
-    await waitFor(() => {
-      expect(screen.getByText("N/A")).toBeInTheDocument();
+      expect(screen.getByText("Failed to fetch")).toBeInTheDocument();
     });
   });
 });

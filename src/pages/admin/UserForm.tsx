@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent, type SyntheticEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import type { ChangeEvent, SyntheticEvent } from "react";
 
 import EditForm from "../../components/EditForm";
-import type { EditField } from "../../components/EditForm";
 
 import {
   createCompleteUser,
@@ -13,14 +11,24 @@ import {
 
 import { getAllDepartments } from "../../services/DepartmentService";
 import { showSuccess, showError } from "../../utils/toast";
+
 import type { Department } from "../../types/DepartmentTypes";
 import type { CompleteUserForm } from "../../types/UserTypes";
+import type { EditField } from "../../components/EditForm";
+
+import {
+  validateRequired,
+  validatePattern,
+} from "../../utils/validation";
+
+type ErrorMap = Record<string, string>;
 
 function UserForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const [errors, setErrors] = useState<ErrorMap>({});
   const [departments, setDepartments] = useState<Department[]>([]);
 
   const [formData, setFormData] = useState<CompleteUserForm>({
@@ -30,21 +38,19 @@ function UserForm() {
     phone: "",
     password: "",
     role_id: 2,
-
     street_name: "",
     city: "",
     district: "",
     state: "",
     pincode: "",
-
     specialization: "",
     salary: 0,
     department_id: 0,
-
     dob: "",
     blood_group: "",
   });
 
+ 
   useEffect(() => {
     async function loadDepartments() {
       try {
@@ -58,14 +64,13 @@ function UserForm() {
     loadDepartments();
   }, []);
 
+ 
   useEffect(() => {
     if (!isEdit || !id) return;
 
     async function loadUser() {
       try {
         const user = await getCompleteUser(Number(id));
-
-        console.log(user);
 
         setFormData({
           first_name: user.first_name ?? "",
@@ -74,20 +79,15 @@ function UserForm() {
           phone: user.phone ?? "",
           password: "",
           role_id: user.role_id,
-
           street_name: user.street_name ?? "",
           city: user.city ?? "",
           district: user.district ?? "",
           state: user.state ?? "",
           pincode: user.pincode ?? "",
-
           specialization: user.specialization ?? "",
-
           salary: user.doctor_salary ?? user.nurse_salary ?? 0,
-
           department_id:
             user.doctor_department_id ?? user.nurse_department_id ?? 0,
-
           dob: user.dob ? user.dob.split("T")[0] : "",
           blood_group: user.blood_group ?? "",
         });
@@ -99,335 +99,229 @@ function UserForm() {
     loadUser();
   }, [id, isEdit]);
 
+
   function handleChange(
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) {
     const { name, value } = e.target;
 
+    const numericFields = new Set([
+      "role_id",
+      "salary",
+      "department_id",
+    ]);
+
+    const parsedValue =
+      numericFields.has(name) && value !== "" ? Number(value) : value;
+
     setFormData((prev) => ({
       ...prev,
-      [name]:
-        name === "role_id" || name === "salary" || name === "department_id"
-          ? Number(value)
-          : value,
+      [name]: parsedValue,
     }));
   }
 
-  function validateForm() {
-    const newErrors: Record<string, string> = {};
+  function validateRole(errors: ErrorMap) {
+    const role = formData.role_id;
 
-    if (!formData.first_name.trim()) {
-      newErrors.first_name = "First name is required";
-    }
+    const needsSalaryDept = role === 2 || role === 4;
 
-    if (!formData.last_name.trim()) {
-      newErrors.last_name = "Last name is required";
-    }
-
-   
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (
-      !/^[a-zA-Z0-9]+([._%+-][a-zA-Z0-9]+)*@[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*(\.[a-zA-Z]{2,})+$/i.test(formData.email)
-    ) {
-      newErrors.email = "Invalid email";
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^\d{10}$/.test(formData.phone)) {
-      newErrors.phone = "Phone number must be 10 digits";
-    }
-
-    if (!isEdit && !formData.password.trim()) {
-      newErrors.password = "Password is required";
-    }
-
-    if (!isEdit && formData.password && formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
-    if (!formData.street_name.trim()) {
-      newErrors.street_name = "Street name is required";
-    }
-
-    if (!formData.city.trim()) {
-      newErrors.city = "City is required";
-    }
-
-    if (!formData.district.trim()) {
-      newErrors.district = "District is required";
-    }
-
-    if (!formData.state.trim()) {
-      newErrors.state = "State is required";
-    }
-
-    if (!/^\d{6}$/.test(formData.pincode)) {
-      newErrors.pincode = "Pincode must be 6 digits";
-    }
-
-    if (formData.role_id === 2) {
+    if (role === 2) {
       if (!formData.specialization?.trim()) {
-        newErrors.specialization = "Specialization is required";
-      }
-
-      if (formData.salary === undefined || formData.salary <= 0) {
-        newErrors.salary = "Salary must be greater than 0";
-      }
-
-      if (!formData.department_id) {
-        newErrors.department_id = "Department is required";
+        errors.specialization = "Specialization is required";
       }
     }
 
-    if (formData.role_id === 3) {
+    if (role === 3) {
       if (!formData.dob) {
-        newErrors.dob = "Date of birth is required";
+        errors.dob = "Date of birth is required";
       }
 
       if (!formData.blood_group?.trim()) {
-        newErrors.blood_group = "Blood group is required";
+        errors.blood_group = "Blood group is required";
       }
     }
 
-    if (formData.role_id === 4) {
-      if (formData.salary === undefined || formData.salary <= 0) {
-        newErrors.salary = "Salary must be greater than 0";
+    if (needsSalaryDept) {
+      if (!formData.salary || formData.salary <= 0) {
+        errors.salary = "Salary must be greater than 0";
       }
+
       if (!formData.department_id) {
-        newErrors.department_id = "Department is required";
+        errors.department_id = "Department is required";
+      }
+    }
+  }
+
+
+  function validateForm(): boolean {
+   const errors: ErrorMap = {};
+
+validateRequired(formData.first_name, "First name is required", "first_name", errors);
+validateRequired(formData.last_name, "Last name is required", "last_name", errors);
+
+const email = formData.email.trim();
+if (email === "") {
+  errors.email = "Email is required";
+} else {
+  validatePattern(
+    email,
+    /^[a-zA-Z0-9]+([._%+-][a-zA-Z0-9]+)*@[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*(\.[a-zA-Z]{2,})+$/,
+    "Invalid email",
+    "email",
+    errors
+  );
+}
+
+const phone = formData.phone.trim();
+if (phone === "") {
+  errors.phone = "Phone number is required";
+} else {
+  validatePattern(
+    phone,
+    /^\d{10}$/,
+    "Phone number must be 10 digits",
+    "phone",
+    errors
+  );
+}
+
+    if (!isEdit) {
+      if (!formData.password.trim()) {
+        errors.password = "Password is required";
+      } else if (formData.password.length < 6) {
+        errors.password = "Password must be at least 6 characters";
       }
     }
 
-    setErrors(newErrors);
+    validateRequired(formData.street_name, "Street name is required", "street_name", errors);
+    validateRequired(formData.city, "City is required", "city", errors);
+    validateRequired(formData.district, "District is required", "district", errors);
+    validateRequired(formData.state, "State is required", "state", errors);
 
-    return Object.keys(newErrors).length === 0;
+    validatePattern(formData.pincode, /^\d{6}$/, "Pincode must be 6 digits", "pincode", errors);
+
+    validateRole(errors);
+
+    setErrors(errors);
+    return Object.keys(errors).length === 0;
   }
+
 
   async function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       if (isEdit && id) {
         await updateCompleteUser(Number(id), formData);
-showSuccess("Details Updated")
+        showSuccess("Details Updated");
       } else {
         await createCompleteUser(formData);
-        showSuccess("User added successfully")
+        showSuccess("User added successfully");
       }
 
-     
+      navigate("/admin-users");
     } catch (error) {
-      showError("Opertion unsuccessfull")
       console.error(error);
+      showError("Operation unsuccessful");
     }
   }
 
-  const fields: EditField[] = [
-    {
-      name: "user-section",
-      label: "User Information",
-      type: "section",
-    },
-
-    {
-      name: "first_name",
-      label: "First Name",
-      type: "text",
-      value: formData.first_name,
-    },
-
-    {
-      name: "last_name",
-      label: "Last Name",
-      type: "text",
-      value: formData.last_name,
-    },
-
-    {
-      name: "email",
-      label: "Email",
-      type: "text",
-      value: formData.email,
-    },
-
-    {
-      name: "phone",
-      label: "Phone",
-      type: "text",
-      value: formData.phone,
-    },
-    ...(!isEdit
-      ? [
-          {
-            name: "password",
-            label: "Password",
-            type: "text" as const,
-            value: formData.password,
-          },
-        ]
-      : []),
-
-    {
-      name: "role_id",
-      label: "Role",
-      type: "select",
-      value: formData.role_id,
-      options: [
-        {
-          label: "Doctor",
-          value: 2,
-        },
-        {
-          label: "Patient",
-          value: 3,
-        },
-        {
-          label: "Nurse",
-          value: 4,
-        },
-      ],
-    },
-
-    {
-      name: "address-section",
-      label: "Address Information",
-      type: "section",
-    },
-
-    {
-      name: "street_name",
-      label: "Street Name",
-      type: "text",
-      value: formData.street_name,
-    },
-
-    {
-      name: "city",
-      label: "City",
-      type: "text",
-      value: formData.city,
-    },
-
-    {
-      name: "district",
-      label: "District",
-      type: "text",
-      value: formData.district,
-    },
-
-    {
-      name: "state",
-      label: "State",
-      type: "text",
-      value: formData.state,
-    },
-
-    {
-      name: "pincode",
-      label: "Pincode",
-      type: "text",
-      value: formData.pincode,
-    },
-  ];
+  const roleFields: EditField[] = [];
 
   if (formData.role_id === 2) {
-    fields.push(
-      {
-        name: "doctor-section",
-        label: "Doctor Details",
-        type: "section",
-      },
-
-      {
-        name: "specialization",
-        label: "Specialization",
-        type: "text",
-        value: formData.specialization ?? "",
-      },
-
-      {
-        name: "salary",
-        label: "Salary",
-        type: "number",
-        value: formData.salary ?? 0,
-      },
-
+    roleFields.push(
+      { name: "doctor-section", label: "Doctor Details", type: "section" },
+      { name: "specialization", label: "Specialization", type: "text", value: formData.specialization },
+      { name: "salary", label: "Salary", type: "number", value: formData.salary },
       {
         name: "department_id",
         label: "Department",
         type: "select",
-        value: formData.department_id ?? 0,
+        value: formData.department_id,
         options: [
-      {label:"Select Department", value:0},
-          ...departments.map((dept) => ({
-          label: dept.department_name,
-          value: dept.id,
-        })),]
-      },
+          { label: "Select Department", value: 0 },
+          ...departments.map((d) => ({
+            label: d.department_name,
+            value: d.id,
+          })),
+        ],
+      }
     );
   }
 
   if (formData.role_id === 3) {
-    fields.push(
-      {
-        name: "patient-section",
-        label: "Patient Details",
-        type: "section",
-      },
-
-      {
-        name: "dob",
-        label: "Date Of Birth",
-        type: "date",
-        value: formData.dob ?? "",
-      },
-
-      {
-        name: "blood_group",
-        label: "Blood Group",
-        type: "text",
-        value: formData.blood_group ?? "",
-      },
+    roleFields.push(
+      { name: "patient-section", label: "Patient Details", type: "section" },
+      { name: "dob", label: "Date Of Birth", type: "date", value: formData.dob },
+      { name: "blood_group", label: "Blood Group", type: "text", value: formData.blood_group }
     );
   }
 
   if (formData.role_id === 4) {
-    fields.push(
-      {
-        name: "nurse-section",
-        label: "Nurse Details",
-        type: "section",
-      },
-
-      {
-        name: "salary",
-        label: "Salary",
-        type: "number",
-        value: formData.salary ?? 0,
-      },
-
+    roleFields.push(
+      { name: "nurse-section", label: "Nurse Details", type: "section" },
+      { name: "salary", label: "Salary", type: "number", value: formData.salary },
       {
         name: "department_id",
         label: "Department",
         type: "select",
-        value: formData.department_id ?? 0,
-          
+        value: formData.department_id,
         options: [
-          {label:"Select department", value:0},
-          ...departments.map((dept) => ({
-          label: dept.department_name,
-          value: dept.id,
-        })),]
-      },
+          { label: "Select Department", value: 0 },
+          ...departments.map((d) => ({
+            label: d.department_name,
+            value: d.id,
+          })),
+        ],
+      }
     );
   }
+
+  const passwordField: EditField[] = [];
+
+if (!isEdit) {
+  passwordField.push({
+    name: "password",
+    label: "Password",
+    type: "text",
+    value: formData.password,
+  });
+}
+
+const fields: EditField[] = [
+  { name: "user-section", label: "User Information", type: "section" },
+
+  { name: "first_name", label: "First Name", type: "text", value: formData.first_name },
+  { name: "last_name", label: "Last Name", type: "text", value: formData.last_name },
+  { name: "email", label: "Email", type: "text", value: formData.email },
+  { name: "phone", label: "Phone", type: "text", value: formData.phone },
+
+  ...passwordField,
+
+  {
+    name: "role_id",
+    label: "Role",
+    type: "select",
+    value: formData.role_id,
+    options: [
+      { label: "Doctor", value: 2 },
+      { label: "Patient", value: 3 },
+      { label: "Nurse", value: 4 },
+    ],
+  },
+
+  { name: "address-section", label: "Address Information", type: "section" },
+
+  { name: "street_name", label: "Street Name", type: "text", value: formData.street_name },
+  { name: "city", label: "City", type: "text", value: formData.city },
+  { name: "district", label: "District", type: "text", value: formData.district },
+  { name: "state", label: "State", type: "text", value: formData.state },
+  { name: "pincode", label: "Pincode", type: "text", value: formData.pincode },
+
+  ...roleFields,
+];
 
   return (
     <EditForm

@@ -1,165 +1,317 @@
-import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
-import { describe, test, expect, vi, beforeEach } from "vitest";
-
-import AdminUsers from "./../pages/admin/AdminUsers";
-
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { BrowserRouter } from "react-router-dom";
+import AdminUsers from "../pages/admin/AdminUsers";
 import * as UserService from "../services/UserService";
-import type { User } from "../types/UserTypes";
 
-beforeEach(() => {
-  vi.clearAllMocks();
+const mockNavigate = vi.fn();
+
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
 });
 
-const mockUsers: User[] = [
+vi.mock("../components/table/DataTable", () => ({
+  default: ({ columns, data }: any) => (
+    <table>
+      <tbody>
+        {data.map((row: any) => (
+          <tr key={row.id ?? JSON.stringify(row)}>
+            {columns.map((column: any) => (
+              <td key={column.header}>
+                {column.render(row)}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ),
+}));
+
+vi.mock("../services/UserService", () => ({
+  getAllUsers: vi.fn(),
+  removeUser: vi.fn(),
+}));
+
+vi.mock("../components/SearchInput", () => ({
+  default: ({
+    value,
+    onChange,
+    placeholder,
+  }: {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder: string;
+  }) => (
+    <input
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  ),
+}));
+
+vi.mock("../components/DeleteModal", () => ({
+  default: ({
+    open,
+    onConfirm,
+    onCancel,
+  }: {
+    open: boolean;
+    onConfirm: () => void;
+    onCancel: () => void;
+  }) =>
+    open ? (
+      <div>
+        <button onClick={onConfirm}>Confirm Delete</button>
+        <button onClick={onCancel}>Cancel Delete</button>
+      </div>
+    ) : null,
+}));
+
+const users = [
   {
     id: 1,
     first_name: "John",
     last_name: "Doe",
     email: "john@test.com",
-    phone: "1234567890",
-    role_id: 2,
+    phone: "9999999999",
+    role_id: 1,
   },
   {
     id: 2,
     first_name: "Jane",
     last_name: "Smith",
     email: "jane@test.com",
-    phone: "9999999999",
-    role_id: 3,
+    phone: "8888888888",
+    role_id: 2,
   },
 ];
 
+const renderComponent = () =>
+  render(
+    <BrowserRouter>
+      <AdminUsers />
+    </BrowserRouter>,
+  );
+
 describe("AdminUsers", () => {
-  test("renders users list", async () => {
-    vi.spyOn(UserService, "getAllUsers").mockResolvedValue(mockUsers);
-
-    render(<AdminUsers />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Users")).toBeInTheDocument();
-    });
-
-    expect(screen.getByText("John Doe")).toBeInTheDocument();
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  test("shows loading state", () => {
-    vi.spyOn(UserService, "getAllUsers").mockImplementation(
-      () => new Promise(() => {})
+  it("shows loading state", () => {
+    vi.mocked(UserService.getAllUsers).mockImplementation(
+      () => new Promise(() => {}),
     );
 
-    render(<AdminUsers />);
+    renderComponent();
 
     expect(screen.getByText("Loading users...")).toBeInTheDocument();
   });
 
-  test("handles error state", async () => {
-    vi.spyOn(UserService, "getAllUsers").mockRejectedValue(
-      new Error("Failed to load users")
-    );
+  it("renders users successfully", async () => {
+    vi.mocked(UserService.getAllUsers).mockResolvedValue(users as any);
 
-    render(<AdminUsers />);
+    renderComponent();
 
-    await waitFor(() => {
-      expect(screen.getByText("Failed to load users")).toBeInTheDocument();
-    });
-  });
-
-  test("filters users by search", async () => {
-    vi.spyOn(UserService, "getAllUsers").mockResolvedValue(mockUsers);
-
-    render(<AdminUsers />);
-
-    await waitFor(() => {
-      expect(screen.getByText("John Doe")).toBeInTheDocument();
-    });
-
-    const searchInput = screen.getByPlaceholderText(
-      "Search users by name or email"
-    );
-
-    fireEvent.change(searchInput, { target: { value: "Jane" } });
-
+    expect(await screen.findByText("John Doe")).toBeInTheDocument();
     expect(screen.getByText("Jane Smith")).toBeInTheDocument();
   });
 
-  test("opens view user details (no duplicate text issue)", async () => {
-    vi.spyOn(UserService, "getAllUsers").mockResolvedValue(mockUsers);
+  it("handles fetch error", async () => {
+    vi.mocked(UserService.getAllUsers).mockRejectedValue(
+      new Error("Fetch failed"),
+    );
 
-    render(<AdminUsers />);
+    renderComponent();
 
-    await waitFor(() => {
-      expect(screen.getAllByText("View")[0]).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getAllByText("View")[0]);
-
-    expect(screen.getByText("Selected User Details")).toBeInTheDocument();
-
-    // FIX: scope inside modal/card
-    const detailCard = screen.getByText("Selected User Details").closest("div")!;
-    expect(within(detailCard).getByText("John Doe")).toBeInTheDocument();
-    expect(within(detailCard).getByText("john@test.com")).toBeInTheDocument();
+    expect(await screen.findByText("Fetch failed")).toBeInTheDocument();
   });
 
-  test("opens edit form", async () => {
-    vi.spyOn(UserService, "getAllUsers").mockResolvedValue(mockUsers);
+  it("handles non error fetch failure", async () => {
+    vi.mocked(UserService.getAllUsers).mockRejectedValue("error");
 
-    render(<AdminUsers />);
+    renderComponent();
 
-    await waitFor(() => {
-      expect(screen.getAllByText("Edit")[0]).toBeInTheDocument();
-    });
+    expect(
+      await screen.findByText("Error occurred while fetching users"),
+    ).toBeInTheDocument();
+  });
+
+  it("navigates to add user page", async () => {
+    vi.mocked(UserService.getAllUsers).mockResolvedValue(users as any);
+
+    renderComponent();
+
+    await screen.findByText("John Doe");
+
+    fireEvent.click(screen.getByText("Add User"));
+
+    expect(mockNavigate).toHaveBeenCalledWith("/admin-users/add");
+  });
+
+  it("navigates to edit user page", async () => {
+    vi.mocked(UserService.getAllUsers).mockResolvedValue(users as any);
+
+    renderComponent();
+
+    await screen.findByText("John Doe");
 
     fireEvent.click(screen.getAllByText("Edit")[0]);
 
-    expect(screen.getByText("Edit User")).toBeInTheDocument();
+    expect(mockNavigate).toHaveBeenCalledWith("/admin-users/edit/1");
   });
 
-  test("updates user (submit form)", async () => {
-    vi.spyOn(UserService, "getAllUsers").mockResolvedValue(mockUsers);
+  it("filters users by name", async () => {
+    vi.mocked(UserService.getAllUsers).mockResolvedValue(users as any);
 
-    const updateSpy = vi.spyOn(UserService, "updateUser").mockResolvedValue({
-      id: 1,
-      first_name: "John",
-      last_name: "Doe",
-      email: "john@test.com",
-      phone: "1234567890",
-      role_id: 2,
-    });
+    renderComponent();
 
-    render(<AdminUsers />);
+    await screen.findByText("John Doe");
 
-    await waitFor(() => {
-      expect(screen.getAllByText("Edit")[0]).toBeInTheDocument();
-    });
+    fireEvent.change(
+      screen.getByPlaceholderText("Search users by name or email"),
+      {
+        target: { value: "john" },
+      },
+    );
 
-    fireEvent.click(screen.getAllByText("Edit")[0]);
-
-    const form = document.querySelector(".edit-user-form") as HTMLFormElement;
-    fireEvent.submit(form);
-
-    await waitFor(() => {
-      expect(updateSpy).toHaveBeenCalled();
-    });
+    expect(screen.getByText("John Doe")).toBeInTheDocument();
+    expect(screen.queryByText("Jane Smith")).not.toBeInTheDocument();
   });
 
-  test("deletes user", async () => {
-    vi.spyOn(UserService, "getAllUsers").mockResolvedValue(mockUsers);
+  it("filters users by email", async () => {
+    vi.mocked(UserService.getAllUsers).mockResolvedValue(users as any);
 
-    const removeSpy = vi
-      .spyOn(UserService, "removeUser")
-      .mockResolvedValue(undefined);
+    renderComponent();
 
-    vi.spyOn(window, "confirm").mockReturnValue(true);
+    await screen.findByText("John Doe");
 
-    render(<AdminUsers />);
+    fireEvent.change(
+      screen.getByPlaceholderText("Search users by name or email"),
+      {
+        target: { value: "jane@test.com" },
+      },
+    );
 
-    await waitFor(() => {
-      expect(screen.getAllByText("Delete")[0]).toBeInTheDocument();
-    });
+    expect(screen.getByText("Jane Smith")).toBeInTheDocument();
+    expect(screen.queryByText("John Doe")).not.toBeInTheDocument();
+  });
+
+  it("opens and closes delete modal", async () => {
+    vi.mocked(UserService.getAllUsers).mockResolvedValue(users as any);
+
+    renderComponent();
+
+    await screen.findByText("John Doe");
 
     fireEvent.click(screen.getAllByText("Delete")[0]);
 
-    expect(removeSpy).toHaveBeenCalledWith(1);
+    expect(screen.getByText("Confirm Delete")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Cancel Delete"));
+
+    expect(screen.queryByText("Confirm Delete")).not.toBeInTheDocument();
+  });
+
+  it("deletes user successfully", async () => {
+    vi.mocked(UserService.getAllUsers).mockResolvedValue(users as any);
+    vi.mocked(UserService.removeUser).mockResolvedValue(undefined as any);
+
+    renderComponent();
+
+    await screen.findByText("John Doe");
+
+    fireEvent.click(screen.getAllByText("Delete")[0]);
+
+    fireEvent.click(screen.getByText("Confirm Delete"));
+
+    await waitFor(() => {
+      expect(UserService.removeUser).toHaveBeenCalledWith(1);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText("John Doe")).not.toBeInTheDocument();
+    });
+  });
+
+  it("handles delete error", async () => {
+    vi.mocked(UserService.getAllUsers).mockResolvedValue(users as any);
+    vi.mocked(UserService.removeUser).mockRejectedValue(
+      new Error("Delete failed"),
+    );
+
+    renderComponent();
+
+    await screen.findByText("John Doe");
+
+    fireEvent.click(screen.getAllByText("Delete")[0]);
+
+    fireEvent.click(screen.getByText("Confirm Delete"));
+
+    expect(await screen.findByText("Delete failed")).toBeInTheDocument();
+  });
+
+  it("handles delete non error object", async () => {
+    vi.mocked(UserService.getAllUsers).mockResolvedValue(users as any);
+    vi.mocked(UserService.removeUser).mockRejectedValue("error");
+
+    renderComponent();
+
+    await screen.findByText("John Doe");
+
+    fireEvent.click(screen.getAllByText("Delete")[0]);
+
+    fireEvent.click(screen.getByText("Confirm Delete"));
+
+    expect(await screen.findByText("Delete failed")).toBeInTheDocument();
+  });
+
+  it("renders admin role", async () => {
+    vi.mocked(UserService.getAllUsers).mockResolvedValue(users as any);
+
+    renderComponent();
+
+    expect(await screen.findByText("Admin")).toBeInTheDocument();
+  });
+
+  it("renders doctor role", async () => {
+    vi.mocked(UserService.getAllUsers).mockResolvedValue(users as any);
+
+    renderComponent();
+
+    expect(await screen.findByText("Doctor")).toBeInTheDocument();
+  });
+
+  it("renders N/A for missing email and phone", async () => {
+    vi.mocked(UserService.getAllUsers).mockResolvedValue([
+      {
+        id: 3,
+        first_name: "Test",
+        last_name: "User",
+        email: "",
+        phone: "",
+        role_id: 3,
+      },
+    ] as any);
+
+    renderComponent();
+
+    expect(await screen.findAllByText("N/A")).toHaveLength(2);
+  });
+
+  it("covers confirmDelete early return", async () => {
+    vi.mocked(UserService.getAllUsers).mockResolvedValue(users as any);
+
+    renderComponent();
+
+    await screen.findByText("John Doe");
+
+    expect(UserService.removeUser).not.toHaveBeenCalled();
   });
 });

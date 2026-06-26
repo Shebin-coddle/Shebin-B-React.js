@@ -1,18 +1,23 @@
 import { useEffect, useState } from "react";
 import DataTable from "../../components/table/DataTable";
 import DetailCard from "../../components/DetailsView";
-import { getAllAppointments } from "../../services/AppointmentService";
+import { getAllAppointments,updateAppointmentStatus } from "../../services/AppointmentService";
 import type { Appointment } from "../../types/AppointmentTypes";
 import { getPatientDetailsById } from "../../services/PatientService";
 import type { PatientDetails } from "../../types/PatientTypes";
-import {
-  approveAppointment,
-  cancelAppointment,
-  completeAppointment,
-} from "../../services/AppointmentService";
 import { getMedicalRecordsByPatientId } from "../../services/MedicalRecordService";
 import type { MedicalRecord } from "../../types/MedicalRecordTypes";
 import DateSearch from "../../components/DateSearch";
+import { getPrescriptionView } from "../../services/PrescriptionService";
+import { groupPrescriptions } from "../../utils/prescriptionGroup";
+import type {
+  PrescriptionItem,
+  PrescriptionView,
+} from "../../types/PrescriptionTypes";
+import { useNavigate } from "react-router-dom";
+import { getAllMedicines } from "../../services/MedicineService";
+import type { Medicine } from "../../types/MedicineTypes";
+import "../../styles/doctorLayout.css";
 
 function DoctorAppointments() {
   const userId = localStorage.getItem("user_id");
@@ -26,6 +31,9 @@ function DoctorAppointments() {
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [showMedicalRecords, setShowMedicalRecords] = useState<boolean>(false);
   const [selectedDate, setSelectedDate] = useState("");
+  const [prescriptions, setPrescriptions] = useState<PrescriptionView[]>([]);
+  const navigate = useNavigate();
+  const [medicines, setMedicines] = useState<Medicine[]>([]);
 
   useEffect(() => {
     async function fetchDoctorAppointments() {
@@ -50,89 +58,72 @@ function DoctorAppointments() {
     fetchDoctorAppointments();
   }, [userId]);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getAllMedicines();
+        setMedicines(data);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+  }, []);
+
   async function handleCancel(id: number) {
     try {
-      await cancelAppointment(id);
+      await updateAppointmentStatus(id, "cancelled");
 
-      setAppointments((prevAppointments) =>
-        prevAppointments.map((appointment) =>
-          appointment.id === id
-            ? {
-                ...appointment,
-                status: "cancelled",
-              }
-            : appointment,
-        ),
+      setAppointments((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: "cancelled" } : a)),
       );
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Error occurred while cancelling appointment");
-      }
+      setError(err instanceof Error ? err.message : "Cancel failed");
     }
   }
 
   async function handleApprove(id: number) {
     try {
-      await approveAppointment(id);
+      await updateAppointmentStatus(id, "booked");
 
-      setAppointments((prevAppointments) =>
-        prevAppointments.map((appointment) =>
-          appointment.id === id
-            ? {
-                ...appointment,
-                status: "booked",
-              }
-            : appointment,
-        ),
+      setAppointments((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: "booked" } : a)),
       );
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Error occurred while approving appointment");
-      }
+      setError(err instanceof Error ? err.message : "Approve failed");
     }
   }
 
   async function handleComplete(id: number) {
     try {
-      await completeAppointment(id);
+      await updateAppointmentStatus(id, "completed");
 
-      setAppointments((prevAppointments) =>
-        prevAppointments.map((appointment) =>
-          appointment.id === id
-            ? {
-                ...appointment,
-                status: "completed",
-              }
-            : appointment,
-        ),
+      setAppointments((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: "completed" } : a)),
       );
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Error occurred while completing appointment");
-      }
+      setError(err instanceof Error ? err.message : "Complete failed");
     }
   }
-  
+
   async function handleViewPatient(patientId: number) {
     try {
       const patientDetails = await getPatientDetailsById(patientId);
       const records = await getMedicalRecordsByPatientId(patientId);
 
+      const prescriptionRows = await getPrescriptionView(
+        patientId,
+        Number(userId),
+      );
+
+      const grouped = groupPrescriptions(prescriptionRows);
+
       setSelectedPatient(patientDetails);
       setMedicalRecords(records);
+
+      setPrescriptions(grouped); 
       setShowMedicalRecords(true);
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Error occurred while fetching patient details");
-      }
+      console.error(err);
     }
   }
 
@@ -189,6 +180,14 @@ function DoctorAppointments() {
           )}
           <button onClick={() => handleViewPatient(appointment.patient_id)}>
             Patient Details
+          </button>
+
+          <button
+            onClick={() =>
+              navigate(`/doctor-prescriptions/add/${appointment.patient_id}`)
+            }
+          >
+            Create Prescription
           </button>
         </div>
       ),
@@ -250,42 +249,86 @@ function DoctorAppointments() {
       )}
 
       {showMedicalRecords && (
-        <div className="user-detail-card">
-          <h3>Medical Records</h3>
+        <>
+          <div className="user-detail-card">
+            <h3>Medical Records</h3>
 
-          {medicalRecords.length === 0 ? (
-            <p>No medical records found</p>
-          ) : (
-            medicalRecords.map((record) => (
-              <div key={record.id} className="medical-record-card">
-                <p>
-                  <strong>Diagnosis:</strong> {record.medical_condition}
-                </p>
+            {medicalRecords.length === 0 ? (
+              <p>No medical records found</p>
+            ) : (
+              medicalRecords.map((record) => (
+                <div key={record.id} className="medical-record-card">
+                  <p>
+                    <strong>Diagnosis:</strong> {record.medical_condition}
+                  </p>
+                  <p>
+                    <strong>Treatment:</strong> {record.treatment}
+                  </p>
+                  <p>
+                    <strong>Status:</strong> {record.status}
+                  </p>
+                  <p>
+                    <strong>Date:</strong>{" "}
+                    {new Date(record.diagnosis_date).toLocaleDateString(
+                      "en-IN",
+                    )}
+                  </p>
+                </div>
+              ))
+            )}
 
-                <p>
-                  <strong>Treatment:</strong> {record.treatment}
-                </p>
-                <p>
-                  <strong>Status:</strong> {record.status}
-                </p>
+            <button
+              onClick={() => {
+                setShowMedicalRecords(false);
+                setMedicalRecords([]);
+                setPrescriptions([]);
+              }}
+            >
+              Close
+            </button>
+          </div>
 
-                <p>
-                  <strong>Date:</strong>{" "}
-                  {new Date(record.diagnosis_date).toLocaleDateString("en-IN")}
-                </p>
-              </div>
-            ))
-          )}
+          <div className="user-detail-card">
+            <h3>Prescriptions</h3>
 
-          <button
-            onClick={() => {
-              setShowMedicalRecords(false);
-              setMedicalRecords([]);
-            }}
-          >
-            Close Medical Records
-          </button>
-        </div>
+            {prescriptions.length === 0 ? (
+              <p>No prescriptions found</p>
+            ) : (
+              prescriptions.map((p) => (
+                <div key={p.id} className="prescription-card">
+                  {p.items.length === 0 ? (
+                    <p>No items</p>
+                  ) : (
+                    p.items.map((item: PrescriptionItem) => (
+                      <div key={item.id} className="prescription-item">
+                        <p>
+                          <strong>Medicine Name:</strong>{" "}
+                          {
+                            medicines.find((m) => m.id === item.medicine_id)
+                              ?.medicine_name
+                          }
+                        </p>
+                        <p>
+                          <strong>Dosage:</strong> {item.dosage}
+                        </p>
+                        <p>
+                          <strong>Start:</strong>{" "}
+                          {new Date(item.start_date).toLocaleDateString(
+                            "en-IN",
+                          )}
+                        </p>
+                        <p>
+                          <strong>End:</strong>{" "}
+                          {new Date(item.end_date).toLocaleDateString("en-IN")}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </>
       )}
     </section>
   );

@@ -5,6 +5,7 @@ import {
   type SyntheticEvent,
 } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+
 import EditForm from "../../components/EditForm";
 import { showSuccess, showError } from "../../utils/toast";
 
@@ -13,12 +14,14 @@ import {
   createMedicine,
   updateMedicine,
 } from "../../services/MedicineService";
+
 import type { UpdateMedicineRequest } from "../../types/MedicineTypes";
 
 function MedicineForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState<UpdateMedicineRequest>({
     medicine_name: "",
     description: "",
@@ -26,21 +29,22 @@ function MedicineForm() {
     expiry_date: "",
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   useEffect(() => {
-    if (!isEdit) {
-      return;
-    }
+    if (!isEdit) return;
 
     async function loadMedicine() {
       try {
         const response = await getMedicineById(Number(id));
 
         const medicine = response[0];
+
         setFormData({
-          medicine_name: medicine.medicine_name,
-          description: medicine.description,
-          stock: medicine.stock,
-          expiry_date: medicine.expiry_date.split("T")[0],
+          medicine_name: medicine.medicine_name || "",
+          description: medicine.description || "",
+          stock: medicine.stock || 0,
+          expiry_date: medicine.expiry_date?.split("T")[0] || "",
         });
       } catch (error) {
         console.error(error);
@@ -61,21 +65,56 @@ function MedicineForm() {
     }));
   }
 
+  function validate(): boolean {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.medicine_name.trim()) {
+      newErrors.medicine_name = "Medicine name is required";
+    }
+
+    if (!formData.description.trim()) {
+      newErrors.description = "Description is required";
+    }
+
+    if (
+      formData.stock === null ||
+      formData.stock === undefined ||
+      formData.stock < 0
+    ) {
+      newErrors.stock = "Stock must be 0 or greater";
+    }
+
+    if (formData.expiry_date) {
+      const today = new Date().toISOString().split("T")[0];
+
+      if (formData.expiry_date < today) {
+        newErrors.expiry_date = "Expiry date cannot be in the past";
+      }
+    } else {
+      newErrors.expiry_date = "Expiry date is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
+
   async function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    if (!validate()) return;
 
     try {
       if (isEdit) {
         await updateMedicine(Number(id), formData);
-        showSuccess("Details Updated")
+        showSuccess("Details Updated");
       } else {
         await createMedicine(formData);
-        showSuccess("Medicine added successfully")
+        showSuccess("Medicine added successfully");
       }
 
       navigate("/admin-medicines");
     } catch (error) {
-      showError("Operation Unsuccessfull")
+      showError("Operation Unsuccessful");
       console.error(error);
     }
   }
@@ -111,6 +150,7 @@ function MedicineForm() {
     <EditForm
       title={isEdit ? "Edit Medicine" : "Add Medicine"}
       fields={fields}
+      errors={errors}
       onChange={handleChange}
       onSubmit={handleSubmit}
       onCancel={() => navigate("/admin-medicines")}

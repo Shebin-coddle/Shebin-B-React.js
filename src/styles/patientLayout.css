@@ -11,6 +11,68 @@
   margin: 0 auto;
   padding: 40px 4%;
 }
+.View-reciept{
+      display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.View-reciept button{
+padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: #8ef489c4;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.payment-modal {
+  background: #fff;
+  padding: 12px;
+  border-radius: 6px;
+  width: 240px;
+}
+
+.payment-modal h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+
+.payment-modal select {
+  width: 100%;
+  padding: 6px;
+  margin-bottom: 10px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.modal-actions button {
+  flex: 1;
+  padding: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.modal-actions button:first-child {
+  background: #2563eb;
+  color: white;
+}
+
+.modal-actions button:last-child {
+  background: #d77575;
+}
 
 @media (max-width: 768px) {
   .patient-content {

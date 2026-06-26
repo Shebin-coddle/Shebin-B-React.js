@@ -1,13 +1,12 @@
 import { useState, type SyntheticEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { LoginUser } from "../services/AuthService";
 import "../styles/Login.css";
-import "../components/Home/NavBar";
-import Navbar from "../components/Home/NavBar";
+import Navbar from "../components/home/NavBar";
 import { showSuccess, showError } from "../utils/toast";
 import { login } from "../redux/authSlice";
 import { useDispatch } from "react-redux";
-import Footer from "../components/Home/Footer";
+import Footer from "../components/home/Footer";
 
 function Login() {
   const navigate = useNavigate();
@@ -119,7 +118,8 @@ function Login() {
         <div className="login-container">
           <h1>Login</h1>
 
-          <form onSubmit={handleLogin}>
+          <form onSubmit={handleLogin} data-testid="login-form">
+            {" "}
             <div>
               <label htmlFor="email">Email</label>
 
@@ -132,7 +132,6 @@ function Login() {
                 autoComplete="email"
               />
             </div>
-
             <div>
               <label htmlFor="password">Password</label>
 
@@ -145,17 +144,15 @@ function Login() {
                 autoComplete="current-password"
               />
             </div>
-
             {error && <p className="error">{error}</p>}
-
-            <button type="submit" disabled={loading}>
+            <button className="loginbutton" type="submit" disabled={loading}>
               {loading ? "Logging in..." : "Login"}
             </button>
             <p className="register-link">
               New user?{" "}
-              <span onClick={() => navigate("/patient-registration")}>
+              <Link to="/patient-registration" className="register-link">
                 Register
-              </span>
+              </Link>
             </p>
           </form>
         </div>

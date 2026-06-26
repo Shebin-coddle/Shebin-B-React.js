@@ -1,13 +1,13 @@
-type DetailItem = {
+type DetailItem = Readonly<{
   label: string;
   value: string | number | null | undefined;
-};
+}>;
 
-type DetailCardProps = {
+type DetailCardProps = Readonly<{
   title: string;
-  details: DetailItem[];
+  details: readonly DetailItem[];
   onClose: () => void;
-};
+}>;
 
 function DetailCard({ title, details, onClose }: DetailCardProps) {
   return (

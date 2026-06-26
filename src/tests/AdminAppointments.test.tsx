@@ -1,259 +1,261 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { describe, test, expect, vi, beforeEach } from "vitest";
-
+import { BrowserRouter } from "react-router-dom";
 import AdminAppointments from "../pages/admin/AdminAppointment";
-import * as AppointmentService from "../services/AppointmentService";
-import type { Appointment } from "../types/AppointmentTypes";
+
+const mockNavigate = vi.fn();
+
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
+vi.mock("../components/table/DataTable", () => ({
+  default: ({ columns, data }: any) => (
+    <table>
+      <tbody>
+        {data.map((row: any) => (
+          <tr key={row.id ?? JSON.stringify(row)}>
+            {columns.map((column: any) => (
+              <td key={column.header}>
+                {column.render(row)}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ),
+}));
 
 vi.mock("../services/AppointmentService", () => ({
   getAllAppointments: vi.fn(),
-  updateAppointment: vi.fn(),
+  removeAppointment: vi.fn(),
 }));
 
-const appointmentMock = vi.mocked(AppointmentService);
+vi.mock("../services/UserService", () => ({
+  getAllUsers: vi.fn(),
+}));
 
-const mockAppointments: Appointment[] = [
-  {
-    id: 1,
-    doctor_id: 10,
-    patient_id: 20,
-    appointment_date: "2026-01-01T00:00:00.000Z",
-    start_time: "10:00",
-    end_time: "10:30",
-    status: "scheduled",
-    created_at: "",
-    updated_at: "",
-    deleted_at: null,
-  },
-  {
-    id: 2,
-    doctor_id: 11,
-    patient_id: 21,
-    appointment_date: "2026-02-01T00:00:00.000Z",
-    start_time: "11:00",
-    end_time: "11:30",
-    status: "completed",
-    created_at: "",
-    updated_at: "",
-    deleted_at: null,
-  },
-];
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+vi.mock("../components/DeleteModal", () => ({
+  default: ({
+    open,
+    onConfirm,
+    onCancel,
+  }: {
+    open: boolean;
+    onConfirm: () => void;
+    onCancel: () => void;
+  }) =>
+    open ? (
+      <div>
+        <p>Delete Appointment</p>
+        <button onClick={onConfirm}>Confirm Delete</button>
+        <button onClick={onCancel}>Cancel Delete</button>
+      </div>
+    ) : null,
+}));
+
+import {
+  getAllAppointments,
+  removeAppointment,
+} from "../services/AppointmentService";
+import { getAllUsers } from "../services/UserService";
 
 describe("AdminAppointments", () => {
-  test("renders loading state", () => {
-    appointmentMock.getAllAppointments.mockImplementation(
-      () => new Promise(() => {})
-    );
+  beforeEach(() => {
+    vi.clearAllMocks();
 
-    render(<AdminAppointments />);
-
-    expect(
-      screen.getByText("Loading appointments...")
-    ).toBeInTheDocument();
-  });
-
-  test("renders appointments table", async () => {
-    appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
-
-    render(<AdminAppointments />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Appointments")).toBeInTheDocument();
-    });
-
-    expect(screen.getByText("scheduled")).toBeInTheDocument();
-  });
-
-  test("handles fetch error", async () => {
-    appointmentMock.getAllAppointments.mockRejectedValue(
-      new Error("Failed to fetch appointments")
-    );
-
-    render(<AdminAppointments />);
-
-    await waitFor(() => {
-      expect(
-        screen.getByText("Failed to fetch appointments")
-      ).toBeInTheDocument();
-    });
-  });
-
-  test("handles non-error fetch exception", async () => {
-    appointmentMock.getAllAppointments.mockRejectedValue("random error");
-
-    render(<AdminAppointments />);
-
-    await waitFor(() => {
-      expect(
-        screen.getByText("Error occurred while fetching appointments")
-      ).toBeInTheDocument();
-    });
-  });
-
-  test("opens appointment details modal", async () => {
-    appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
-
-    render(<AdminAppointments />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Appointments")).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getAllByText("View")[0]);
-
-    expect(
-      screen.getByText("Selected Appointment Details")
-    ).toBeInTheDocument();
-  });
-
-  test("closes appointment details modal", async () => {
-    appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
-
-    render(<AdminAppointments />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Appointments")).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getAllByText("View")[0]);
-
-    fireEvent.click(screen.getByText("Close"));
-
-    await waitFor(() => {
-      expect(
-        screen.queryByText("Selected Appointment Details")
-      ).not.toBeInTheDocument();
-    });
-  });
-
-  test("opens edit form", async () => {
-    appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
-
-    render(<AdminAppointments />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Appointments")).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getAllByText("Edit")[0]);
-
-    expect(screen.getByText("Edit Appointment")).toBeInTheDocument();
-
-    expect(screen.getByDisplayValue("10:00")).toBeInTheDocument();
-  });
-
-  test("updates appointment successfully", async () => {
-    appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
-    appointmentMock.updateAppointment.mockResolvedValue(undefined);
-
-    render(<AdminAppointments />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Appointments")).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getAllByText("Edit")[0]);
-
-const statusSelect = screen.getByRole("combobox");
-    fireEvent.change(statusSelect, {
-      target: {
-        name: "status",
-        value: "completed",
+    (getAllAppointments as any).mockResolvedValue([
+      {
+        id: 1,
+        doctor_id: 10,
+        patient_id: 20,
+        appointment_date: "2025-01-10",
+        start_time: "09:00",
+        end_time: "10:00",
+        status: "booked",
       },
-    });
+    ]);
 
-    fireEvent.click(screen.getByText("Update"));
-
-    await waitFor(() => {
-      expect(appointmentMock.updateAppointment).toHaveBeenCalledWith(1, {
-        appointment_date: "2026-01-01",
-        start_time: "10:00",
-        end_time: "10:30",
-        status: "completed",
-      });
-    });
+    (getAllUsers as any).mockResolvedValue([
+      {
+        id: 10,
+        first_name: "John",
+        last_name: "Doctor",
+      },
+      {
+        id: 20,
+        first_name: "Jane",
+        last_name: "Patient",
+      },
+    ]);
   });
 
-  test("handles update error", async () => {
-    appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
+  function renderComponent() {
+    return render(
+      <BrowserRouter>
+        <AdminAppointments />
+      </BrowserRouter>,
+    );
+  }
 
-    appointmentMock.updateAppointment.mockRejectedValue(
-      new Error("Update failed")
+  it("renders appointments page", async () => {
+    renderComponent();
+
+    expect(await screen.findByText("Appointments")).toBeInTheDocument();
+    expect(await screen.findByText("Dr.John Doctor")).toBeInTheDocument();
+    expect(await screen.findByText("Jane Patient")).toBeInTheDocument();
+  });
+
+  it("shows loading initially", () => {
+    (getAllAppointments as any).mockImplementation(() => new Promise(() => {}));
+
+    renderComponent();
+
+    expect(screen.getByText("Loading appointments...")).toBeInTheDocument();
+  });
+
+  it("shows fetch error", async () => {
+    (getAllAppointments as any).mockRejectedValue(
+      new Error("Failed to fetch appointments"),
     );
 
-    render(<AdminAppointments />);
+    renderComponent();
+
+    expect(
+      await screen.findByText("Failed to fetch appointments"),
+    ).toBeInTheDocument();
+  });
+
+  it("handles user fetch failure", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    (getAllUsers as any).mockRejectedValue(new Error("User error"));
+
+    renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText("Appointments")).toBeInTheDocument();
+      expect(spy).toHaveBeenCalled();
     });
 
-    fireEvent.click(screen.getAllByText("Edit")[0]);
+    spy.mockRestore();
+  });
 
-    fireEvent.click(screen.getByText("Update"));
+  it("navigates to add appointment page", async () => {
+    renderComponent();
+
+    fireEvent.click(await screen.findByText("Add appointment"));
+
+    expect(mockNavigate).toHaveBeenCalledWith("/admin-appointments/add");
+  });
+
+  it("navigates to edit appointment page", async () => {
+    renderComponent();
+
+    fireEvent.click(await screen.findByText("Edit"));
+
+    expect(mockNavigate).toHaveBeenCalledWith("/admin-appointments/edit/1");
+  });
+
+  it("opens delete modal", async () => {
+    renderComponent();
+
+    fireEvent.click(await screen.findByText("Delete"));
+
+    expect(screen.getByText("Delete Appointment")).toBeInTheDocument();
+  });
+
+  it("closes delete modal", async () => {
+    renderComponent();
+
+    fireEvent.click(await screen.findByText("Delete"));
+
+    fireEvent.click(screen.getByText("Cancel Delete"));
 
     await waitFor(() => {
-      expect(screen.getByText("Update failed")).toBeInTheDocument();
+      expect(screen.queryByText("Delete Appointment")).not.toBeInTheDocument();
     });
   });
 
-  test("handles non-error update exception", async () => {
-    appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
+  it("deletes appointment successfully", async () => {
+    (removeAppointment as any).mockResolvedValue(undefined);
 
-    appointmentMock.updateAppointment.mockRejectedValue("unknown");
+    renderComponent();
 
-    render(<AdminAppointments />);
+    fireEvent.click(await screen.findByText("Delete"));
 
-    await waitFor(() => {
-      expect(screen.getByText("Appointments")).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getAllByText("Edit")[0]);
-
-    fireEvent.click(screen.getByText("Update"));
+    fireEvent.click(screen.getByText("Confirm Delete"));
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Error occurred while updating appointment")
-      ).toBeInTheDocument();
+      expect(removeAppointment).toHaveBeenCalledWith(1);
     });
   });
 
-  test("cancel edit form", async () => {
-    appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
+  it("handles delete failure", async () => {
+    (removeAppointment as any).mockRejectedValue(new Error("Delete failed"));
 
-    render(<AdminAppointments />);
+    renderComponent();
 
-    await waitFor(() => {
-      expect(screen.getByText("Appointments")).toBeInTheDocument();
-    });
+    fireEvent.click(await screen.findByText("Delete"));
 
-    fireEvent.click(screen.getAllByText("Edit")[0]);
+    fireEvent.click(screen.getByText("Confirm Delete"));
 
-    fireEvent.click(screen.getByText("Cancel"));
-
-    await waitFor(() => {
-      expect(
-        screen.queryByText("Edit Appointment")
-      ).not.toBeInTheDocument();
-    });
+    expect(await screen.findByText("Delete failed")).toBeInTheDocument();
   });
 
-  test("renders appointment data", async () => {
-    appointmentMock.getAllAppointments.mockResolvedValue(mockAppointments);
+  it("filters appointments by search text", async () => {
+    renderComponent();
 
-    render(<AdminAppointments />);
+    await screen.findByText("Dr.John Doctor");
 
-    await waitFor(() => {
-      expect(
-        screen.getByText("2026-01-01T00:00:00.000Z")
-      ).toBeInTheDocument();
+    fireEvent.change(
+      screen.getByPlaceholderText("Search by patient/doctor name"),
+      {
+        target: { value: "unknown" },
+      },
+    );
+
+    expect(screen.queryByText("Dr.John Doctor")).not.toBeInTheDocument();
+  });
+
+  it("filters appointments by date", async () => {
+    renderComponent();
+
+    await screen.findByText("Dr.John Doctor");
+
+    const dateInput = document.querySelector(
+      'input[type="date"]',
+    ) as HTMLInputElement;
+
+    fireEvent.change(dateInput, {
+      target: { value: "2025-02-01" },
     });
 
-    expect(screen.getByText("10")).toBeInTheDocument();
-    expect(screen.getByText("20")).toBeInTheDocument();
+    expect(screen.queryByText("Dr.John Doctor")).not.toBeInTheDocument();
+  });
+
+  it("clears filters", async () => {
+    renderComponent();
+
+    await screen.findByText("Dr.John Doctor");
+
+    fireEvent.change(
+      screen.getByPlaceholderText("Search by patient/doctor name"),
+      {
+        target: { value: "abc" },
+      },
+    );
+
+    fireEvent.click(screen.getByText("Clear Filters"));
+
+    expect(
+      screen.getByPlaceholderText("Search by patient/doctor name"),
+    ).toHaveValue("");
   });
 });

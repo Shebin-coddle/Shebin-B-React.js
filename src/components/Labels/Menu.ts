@@ -9,8 +9,8 @@ export const adminMenu = [
   { path: "/admin-appointments", label: "Appointments" },
   { path: "/admin-bills", label: "Bills" },
   { path: "/admin-departments", label: "Departments" },
-  { path: "/admin-reports", label: "Reports" },
   { path: "/admin-medicines", label: "Medicines" },
+  { path: "/admin-fees", label: "Fees" },
 ];
 
 export const doctorMenu = [

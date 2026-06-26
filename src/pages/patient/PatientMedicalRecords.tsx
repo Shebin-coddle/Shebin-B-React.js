@@ -50,12 +50,13 @@ function PatientMedicalRecords() {
       render: (record: MedicalRecord) => record.treatment,
     },
     {
-      header: "Date",
+      header: "Status",
       render: (record: MedicalRecord) => record.status,
     },
     {
       header: "Date",
-      render: (record: MedicalRecord) => new Date(record.diagnosis_date).toLocaleDateString("en-IN"),
+      render: (record: MedicalRecord) =>
+        new Date(record.diagnosis_date).toLocaleDateString("en-IN"),
     },
     {
       header: "Actions",
@@ -94,7 +95,7 @@ function PatientMedicalRecords() {
               value: selectedRecord.treatment,
             },
             {
-              label: "Treatment",
+              label: "Status",
               value: selectedRecord.status,
             },
             {

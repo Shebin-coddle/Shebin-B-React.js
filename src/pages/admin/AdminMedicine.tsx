@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import DataTable from "../../components/table/DataTable";
 import {
   getAllMedicines,
@@ -8,7 +8,6 @@ import type { Medicine } from "../../types/MedicineTypes";
 import { useNavigate } from "react-router-dom";
 import DeleteModal from "../../components/DeleteModal";
 import SearchInput from "../../components/SearchInput";
-
 
 function AdminMedicines() {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
@@ -63,12 +62,13 @@ function AdminMedicines() {
     }
   }
 
+  const filteredMedicines = medicines.filter((medicine) =>
+    medicine.medicine_name.toLowerCase().includes(searchText.toLowerCase()),
+  );
 
-   const filteredMedicines = medicines.filter((medicine) => {
-    const name = medicine.medicine_name || "".toLowerCase();
-
-    return name.includes(searchText.toLowerCase());
-  });
+  const handleSearch = useCallback((value: string) => {
+    setSearchText(value);
+  }, []);
 
   const columns = [
     {
@@ -118,10 +118,10 @@ function AdminMedicines() {
         <div className="users-actions">
           <SearchInput
             value={searchText}
-            onChange={setSearchText}
+            onChange={handleSearch}
             placeholder="Search medicine by name"
           />
-        
+
           <button
             className="add-btn"
             onClick={() => navigate("/admin-medicines/add")}

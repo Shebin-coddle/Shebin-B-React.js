@@ -1,21 +1,37 @@
+import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { vi } from "vitest";
 import SearchInput from "../components/SearchInput";
 
-test("calls onChange when user types", () => {
-  const handleChange = vi.fn();
+describe("SearchInput Component", () => {
+  it("should render with the correct placeholder and initial value", () => {
+    render(
+      <SearchInput 
+        value="Initial Query" 
+        placeholder="Search here..." 
+        onChange={vi.fn()} 
+      />
+    );
 
-  render(
-    <SearchInput
-      value=""
-      placeholder="Search users"
-      onChange={handleChange}
-    />,
-  );
-
-  fireEvent.change(screen.getByPlaceholderText("Search users"), {
-    target: { value: "admin" },
+    const inputElement = screen.getByPlaceholderText("Search here...") as HTMLInputElement;
+    expect(inputElement).toBeInTheDocument();
+    expect(inputElement.value).toBe("Initial Query");
   });
 
-  expect(handleChange).toHaveBeenCalledWith("admin");
+  it("should trigger the onChange callback function when input changes", () => {
+    const mockOnChange = vi.fn();
+    render(
+      <SearchInput 
+        value="" 
+        placeholder="Search..." 
+        onChange={mockOnChange} 
+      />
+    );
+
+    const inputElement = screen.getByPlaceholderText("Search...") as HTMLInputElement;
+    
+    fireEvent.change(inputElement, { target: { value: "Testing" } });
+
+    expect(mockOnChange).toHaveBeenCalledTimes(1);
+    expect(mockOnChange).toHaveBeenCalledWith("Testing");
+  });
 });

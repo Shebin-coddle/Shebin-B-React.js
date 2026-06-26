@@ -9,14 +9,31 @@ import SearchInput from "../../components/SearchInput";
 import "../../styles/deleteModal.css";
 import "../../styles/userHeader.css";
 
+function getRoleName(roleId: number): string {
+  switch (roleId) {
+    case 1:
+      return "Admin";
+    case 2:
+      return "Doctor";
+    case 3:
+      return "Patient";
+    case 4:
+      return "Nurse";
+    default:
+      return "";
+  }
+}
+
 function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const [searchText, setSearchText] = useState<string>("");
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,11 +42,7 @@ function AdminUsers() {
         const userData = await getAllUsers();
         setUsers(userData);
       } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Error occurred while fetching users");
-        }
+        setError(err instanceof Error ? err.message : "Error occurred while fetching users");
       } finally {
         setLoading(false);
       }
@@ -43,7 +56,7 @@ function AdminUsers() {
   }
 
   async function confirmDelete() {
-    if (!deleteId) return;
+    if (deleteId === null) return;
 
     try {
       setDeleting(true);
@@ -88,16 +101,7 @@ function AdminUsers() {
     },
     {
       header: "Role",
-      render: (user: User) =>
-        user.role_id === 1
-          ? "Admin"
-          : user.role_id === 2
-            ? "Doctor"
-            : user.role_id === 3
-              ? "Patient"
-              : user.role_id === 4
-                ? "Nurse"
-                : "",
+      render: (user: User) => getRoleName(user.role_id),
     },
     {
       header: "Actions",
@@ -107,19 +111,16 @@ function AdminUsers() {
             Edit
           </button>
 
-          <button onClick={() => openDeleteModal(user.id)}>Delete</button>
+          <button onClick={() => openDeleteModal(user.id)}>
+            Delete
+          </button>
         </div>
       ),
     },
   ];
 
-  if (loading) {
-    return <p>Loading users...</p>;
-  }
-
-  if (error) {
-    return <p className="error">{error}</p>;
-  }
+  if (loading) return <p>Loading users...</p>;
+  if (error) return <p className="error">{error}</p>;
 
   return (
     <section>

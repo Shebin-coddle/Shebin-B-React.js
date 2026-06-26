@@ -1,7 +1,7 @@
-type DashboardCardProps = {
+type DashboardCardProps = Readonly<{
   title: string;
   count: number | string;
-};
+}>;
 
 function DashboardCard({ title, count }: DashboardCardProps) {
   return (
