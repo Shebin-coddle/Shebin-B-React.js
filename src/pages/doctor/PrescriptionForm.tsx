@@ -248,18 +248,18 @@ function PrescriptionForm() {
           </div>
 
           {formData.items.length > 1 && (
-            <button type="button" onClick={() => removeItem(index)}>
+            <button type="button" className="presform-btn" onClick={() => removeItem(index)}>
               Remove
             </button>
           )}
         </div>
       ))}
 
-      <button type="button" onClick={addItem}>
+      <button type="button" className="presform-btn" onClick={addItem}>
         Add Medicine
       </button>
 
-      <button type="submit">Save Prescription</button>
+      <button className="presform-btn" type="submit">Save Prescription</button>
     </form>
   );
 }

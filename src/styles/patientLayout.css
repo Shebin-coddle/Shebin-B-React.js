@@ -1,81 +1,117 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  margin: 0;
+  overflow-x: hidden;
+}
+
 .patient-layout {
   min-height: 100vh;
   background: #f8fafc;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .patient-content {
   flex: 1;
-  width: 100%;
+  width: min( 90%);
   margin: 0 auto;
-  padding: 40px 4%;
-}
-.View-reciept{
-      display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+  padding: 40px 32px;
+  overflow-x: hidden;
 }
 
-.View-reciept button{
-padding: 8px 14px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    background-color: #8ef489c4;
+.View-reciept {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.View-reciept button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #8ef489c4;
+}
+
+.editpatient {
+  padding: 60px 5%;
 }
 
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.3);
-
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 20px;
+  background: rgba(0,0,0,.35);
 }
 
-.payment-modal {
-  background: #fff;
-  padding: 12px;
-  border-radius: 6px;
-  width: 240px;
+.payment-modal{
+  width:min(360px,100%);
+  background:#fff;
+  padding:20px;
+  border-radius:10px;
 }
 
-.payment-modal h3 {
-  margin: 0 0 10px;
-  font-size: 14px;
+.modal-actions{
+  display:flex;
+  gap:10px;
 }
 
-.payment-modal select {
-  width: 100%;
-  padding: 6px;
-  margin-bottom: 10px;
+.modal-actions button{
+  flex:1;
 }
 
-.modal-actions {
-  display: flex;
-  gap: 6px;
+@media (max-width:992px){
+
+.patient-content{
+padding:30px 24px;
 }
 
-.modal-actions button {
-  flex: 1;
-  padding: 6px;
-  border: none;
-  cursor: pointer;
 }
 
-.modal-actions button:first-child {
-  background: #2563eb;
-  color: white;
+@media (max-width:768px){
+
+.patient-content{
+padding:20px 16px;
 }
 
-.modal-actions button:last-child {
-  background: #d77575;
+.editpatient{
+padding:30px 16px;
 }
 
-@media (max-width: 768px) {
-  .patient-content {
-    padding: 30px 24px;
-  }
+.View-reciept{
+flex-direction:column;
+}
+
+.View-reciept button{
+width:100%;
+}
+
+}
+
+@media (max-width:480px){
+
+.patient-content{
+padding:16px 12px;
+}
+
+.modal-actions{
+flex-direction:column;
+}
+
+.modal-actions button{
+width:100%;
+}
+
 }

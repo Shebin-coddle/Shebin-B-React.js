@@ -110,10 +110,10 @@ function AdminBills() {
     return matchesName && matchesDate;
   });
   const getReceiptUrl = (link?: string | null) => {
-  if (!link) return "";
-  if (link.startsWith("http")) return link;
-  return `${import.meta.env.VITE_API_URL}${link}`;
-};
+    if (!link) return "";
+    if (link.startsWith("http")) return link;
+    return `${import.meta.env.VITE_API_URL}${link}`;
+  };
 
   const columns = [
     {
@@ -162,21 +162,21 @@ function AdminBills() {
       ),
     },
     {
-  header: "Receipt",
-  render: (bill: Bill) =>
-    bill.receipt_link ? (
-      <button
-        className="report-btn"
-        onClick={() =>
-          window.open(getReceiptUrl(bill.receipt_link), "_blank")
-        }
-      >
-        View Receipt
-      </button>
-    ) : (
-      "-"
-    ),
-}
+      header: "Receipt",
+      render: (bill: Bill) =>
+        bill.receipt_link ? (
+          <button
+            className="report-btn"
+            onClick={() =>
+              window.open(getReceiptUrl(bill.receipt_link), "_blank")
+            }
+          >
+            View Receipt
+          </button>
+        ) : (
+          "-"
+        ),
+    },
   ];
 
   if (loading) {

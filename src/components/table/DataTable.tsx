@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type React from "react";
+import "../../styles/table.css"
 
 type TableColumn<T> = {
   header: string;
