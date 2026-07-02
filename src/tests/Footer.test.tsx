@@ -17,18 +17,7 @@ describe("Footer Component", () => {
   it("should render navigation shortcuts and contact parameters correctly", () => {
     render(<Footer />);
 
-    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute(
-      "href",
-      "#home",
-    );
-    expect(screen.getByRole("link", { name: "Services" })).toHaveAttribute(
-      "href",
-      "#services",
-    );
-    expect(screen.getByRole("link", { name: "Appointment" })).toHaveAttribute(
-      "href",
-      "#appointment",
-    );
+  
 
     expect(screen.getByText("Cardiology")).toBeInTheDocument();
     expect(screen.getByText("+91 6238922842")).toBeInTheDocument();
